@@ -1,0 +1,27 @@
+<ActionBar>
+    <Label text="Home"></Label>
+</ActionBar>
+
+<GridLayout rows="auto auto auto *" columns="* *">
+    <Label row="0" [text]="connectionStatus" colSpan="2" class="h2 p-30" horizontalAlignment="center"></Label>
+    <Button row="1" class="-primary" col="0" width="150" horizontalAlignment="center" (tap)="subscribeToMessage1()" text="Subscribe 1"></Button>
+    <Button row="1" class="-primary" col="1" width="150" horizontalAlignment="center" (tap)="subscribeToMessage2()" text="Subscribe 2"></Button>
+    <GridLayout row="2" columns="* auto" colSpan="2" class="p-y-10 p-x-20">
+        <TextField col="0" class="-input" [(ngModel)]="messageContent"></TextField>
+		<Button col="1" class="-primary -rounded-sm" text="Send" (tap)="sendMessage()"></Button>
+	</GridLayout>
+    <GridLayout rows="* auto" row="3" col="0">
+        <ListView [items]="logs1">
+            <ng-template let-log="item" let-i="index" let-odd="odd" let-even="even">
+                <Label [text]="log.payload.content"></Label>
+            </ng-template>
+        </ListView>
+    </GridLayout>
+    <GridLayout rows="* auto" row="2" col="1">
+        <ListView [items]="logs2">
+            <ng-template let-log="item" let-i="index" let-odd="odd" let-even="even">
+                <Label [text]="log.payload.content" horizontalAlignment="right" textAlign="right"></Label>
+            </ng-template>
+        </ListView>
+    </GridLayout>
+</GridLayout>
