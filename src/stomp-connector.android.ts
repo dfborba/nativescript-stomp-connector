@@ -107,7 +107,7 @@ export class StompConnector {
             this.mStompClient = null;
         }
 	}
-	
+
 	public topic(
 		destination: string,
 		callback: (payload: StompMessage) => {}
@@ -174,7 +174,7 @@ export class StompConnector {
 				.subscribe(this._sendMessageCallback, this._sendMessageFailCallback);
         }
 	}
-	
+
 	set mStompClient(stompClient: StompClient) {
 		this._mStompClient = stompClient;
 	}

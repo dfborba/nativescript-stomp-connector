@@ -1,7 +1,7 @@
 import { StompConfig, StompMessage } from './stomp-connector.common';
 
 declare var StompClientLib: any;
-export declare class StompClientLibDelegate extends NSObject {}
+export declare class StompClientLibDelegate {}
 
 class MyStompClientLibDelegateImpl extends NSObject implements StompClientLibDelegate {
 	public static ObjCProtocols = [ StompClientLibDelegate ];
