@@ -73,7 +73,9 @@ export class HomeComponent implements OnInit {
         this.stompClient.send(
             JSON.stringify({ content: this.messageContent }),
             '/app/chat/2f33c217-7e76-4adf-801f-db7822f76975', 
-            {"X-Authorization":
-                    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhOWM4NGZjZTdiMDU0Njk2YmI0N2Q1YTkxZDVhMDEwMCIsInJvbGUiOiJQQVJUTkVSIiwiaXNzIjoiV2l0ZnkuaW8iLCJhY2NlcHRfdGVybXMiOnRydWUsImVtYWlsX2NvbmZpcm1lZCI6dHJ1ZSwiZXhwIjoxNjA5MjAwNTU3LCJpYXQiOjE2MDEzMzgxNTd9.WxsshIz33Sb8EtJAH0VG2UtO1CYMZ4oPO7hTVvvMruT_OdPz1uWlOtiU_pruuV4h7LaZ4ut-ar5PpccYSRe2ng" });
+            {
+                "X-Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhOWM4NGZjZTdiMDU0Njk2YmI0N2Q1YTkxZDVhMDEwMCIsInJvbGUiOiJQQVJUTkVSIiwiaXNzIjoiV2l0ZnkuaW8iLCJhY2NlcHRfdGVybXMiOnRydWUsImVtYWlsX2NvbmZpcm1lZCI6dHJ1ZSwiZXhwIjoxNjA5MjAwNTU3LCJpYXQiOjE2MDEzMzgxNTd9.WxsshIz33Sb8EtJAH0VG2UtO1CYMZ4oPO7hTVvvMruT_OdPz1uWlOtiU_pruuV4h7LaZ4ut-ar5PpccYSRe2ng",
+                "content-type": "application/json" 
+            });
     }
 }
