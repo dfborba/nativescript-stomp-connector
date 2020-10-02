@@ -1,3 +1,4 @@
+
 declare module io {
 	export module reactivex {
 		export module functions {
@@ -40,7 +41,7 @@ declare module io {
 		}
 
 		export class Flowable<T> extends java.lang.Object {
-			public static class: java.lang.Class<io.reactivex.Flowable>;
+			public static class: java.lang.Class<io.reactivex.Flowable<any>>;
 			public subscribe(): io.reactivex.disposables.Disposable;
 			public subscribe(onNext: io.reactivex.functions.Consumer<T>): io.reactivex.disposables.Disposable;
 			public subscribe(onNext: io.reactivex.functions.Consumer<T>, onError: io.reactivex.functions.Consumer<T>): io.reactivex.disposables.Disposable;
@@ -58,7 +59,7 @@ declare module io {
 			public subscribe(onComplete: io.reactivex.functions.Action): io.reactivex.disposables.Disposable;
 			public subscribe(
 				onComplete: io.reactivex.functions.Action,
-				onError: io.reactivex.functions.Consumer<T>): io.reactivex.disposables.Disposable;
+				onError: io.reactivex.functions.Consumer<any>): io.reactivex.disposables.Disposable;
 		}
 	}
 }
@@ -81,7 +82,7 @@ declare module ua {
 				public withServerHeartbeat(ms: number): ua.naiksoftware.stomp.StompClient;
 				public withClientHeartbeat(ms: number): ua.naiksoftware.stomp.StompClient;
 				public connect(): void;
-				public connect(headers: java.utils.List<ua.naiksoftware.stomp.dto.StompHeader>): void;
+				public connect(headers: java.util.List<ua.naiksoftware.stomp.dto.StompHeader>): void;
 				public send(destination: string): io.reactivex.Completable;
 				public send(destination: string, data: string): io.reactivex.Completable;
 				public send(stompMessage: ua.naiksoftware.stomp.dto.StompMessage): io.reactivex.Completable;
@@ -91,7 +92,7 @@ declare module ua {
 				public disconnect(): void;
 				public disconnectCompletable(): void;
 				public topic(destinationPath: string): io.reactivex.Flowable<ua.naiksoftware.stomp.dto.StompMessage>;
-				public topic(destinationPath: string, stompHeaders: java.utils.List<ua.naiksoftware.stomp.dto.StompHeader>): io.reactivex.Flowable<ua.naiksoftware.stomp.dto.StompMessage>;
+				public topic(destinationPath: string, stompHeaders: java.util.List<ua.naiksoftware.stomp.dto.StompHeader>): io.reactivex.Flowable<ua.naiksoftware.stomp.dto.StompMessage>;
 				public isConnected(): boolean;
 			}
 
@@ -121,13 +122,13 @@ declare module ua {
 				export class StompMessage extends java.lang.Object {
 					public static class: java.lang.Class<ua.naiksoftware.stomp.dto.StompMessage>;
 					public constructor();
-					public constructor(stompCommand: string, stompHeaders: java.utils.List<ua.naiksoftware.stomp.dto.StompHeader>, payload: string);
+					public constructor(stompCommand: string, stompHeaders: java.util.List<ua.naiksoftware.stomp.dto.StompHeader>, payload: string);
 					private mStompCommand: string;
-					private mStompHeaders: java.utils.List<ua.naiksoftware.stomp.dto.StompHeader>;
+					private mStompHeaders: java.util.List<ua.naiksoftware.stomp.dto.StompHeader>;
 					private mPayload: string;
 					public getStompCommand(): string;
 					public getPayload(): string;
-					public getStompHeaders(): java.utils.List<ua.naiksoftware.stomp.dto.StompHeader>;
+					public getStompHeaders(): java.util.List<ua.naiksoftware.stomp.dto.StompHeader>;
 					public findHeader(key: string): string;
 				}
 			}

@@ -34,7 +34,7 @@ export declare class StompConnector {
         messages: [{ destination: string, callback: (payload: StompMessage) => {} }]};
     private _mStompClient: any;
     private _compositeDisposable?: any;
-    
+
 	constructor();
     public connect(config: StompConfig): void;
     public disconnect(): void;
