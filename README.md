@@ -1,5 +1,7 @@
 # nativescript-stomp-connector
 
+# UNDER CONSTRUCTION (do not use this plugin yet)
+
 Add your plugin badges here. See [nativescript-urlhandler](https://github.com/hypery2k/nativescript-urlhandler) for example.
 
 Then describe what's the purpose of your plugin. 
