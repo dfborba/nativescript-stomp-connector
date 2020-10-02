@@ -30,8 +30,8 @@ export declare class StompConfig {
 
 export declare class StompConnector {
     private _callbacks: {
-		topics: [{ destination: string, callback: (payload: StompMessage) => {} }], 
-        messages: [{ destination: string, callback: (payload: StompMessage) => {} }]};
+		topics: [{ destination: string, callback: (payload: StompMessage) => void }], 
+        messages: [{ destination: string, callback: (payload: StompMessage) => void }]};
     private _mStompClient: any;
     private _compositeDisposable?: any;
 
