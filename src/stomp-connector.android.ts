@@ -5,8 +5,8 @@ type StompClient = ua.naiksoftware.stomp.StompClient;
 
 export class StompConnector {
 	private _callbacks: {
-		topics: [{ destination: string, callback: (payload: StompMessage) => {} }?], 
-        messages: [{ destination: string, callback: (payload: StompMessage) => {} }?]};
+		topics: [{ destination: string, callback: (payload: StompMessage) => void }?], 
+        messages: [{ destination: string, callback: (payload: StompMessage) => void }?]};
 	private _mStompClient: ua.naiksoftware.stomp.StompClient; /* ua.naiksoftware.stomp.StompClient() */
 	private _compositeDisposable: any; /* io.reactivex.disposables.CompositeDisposable */
 	private _topicCompositeDisposable: any; /* io.reactivex.disposables.CompositeDisposable */
@@ -113,12 +113,12 @@ export class StompConnector {
 		callback: (payload: StompMessage) => {}
 	) {
 		this._callbacks['topics'].push({ destination: destination, callback: callback });
-		const that = this;
+		const that = new WeakRef(this);
 
 		const _subscribeCallback = new io.reactivex.functions.Consumer({
 			accept: function (topicMessage: ua.naiksoftware.stomp.dto.StompMessage) {
 				console.log(topicMessage.getPayload());
-				that._notify('topics', destination, JSON.parse(topicMessage.getPayload()));
+				that.get()._notify('topics', destination, JSON.parse(topicMessage.getPayload()));
 			},
 		});
 
