@@ -148,12 +148,12 @@ export class StompConnector {
     public send(message: string, toDestination: string, withHeaders?: any, withReceipt?: string): void {
 		if (!!withHeaders) {
 			if (!!withReceipt) {
-				this._mStompClient.sendMessageToDestinationWithHeadersWithReceipt(message, toDestination, withHeaders, withReceipt);
+				this._mStompClient.sendMessageWithMessageToDestinationWithHeadersWithReceipt(message, toDestination, withHeaders, withReceipt);
 			} else {
-				this._mStompClient.sendMessageToDestinationWithHeaders(message, toDestination, withHeaders);
+				this._mStompClient.sendMessageWithMessageToDestinationWithHeaders(message, toDestination, withHeaders);
 			}
 		} else {
-			this._mStompClient.sendMessageToDestination(message, toDestination);
+			this._mStompClient.sendMessageWithMessageToDestination(message, toDestination);
 		}
 	}
 
