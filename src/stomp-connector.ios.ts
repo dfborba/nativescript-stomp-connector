@@ -146,15 +146,7 @@ export class StompConnector {
 	}
 
     public send(message: string, toDestination: string, withHeaders?: any, withReceipt?: string): void {
-		if (!!withHeaders) {
-			if (!!withReceipt) {
-				this._mStompClient.sendMessageWithMessageToDestinationWithHeadersWithReceipt(message, toDestination, withHeaders, withReceipt);
-			} else {
-				this._mStompClient.sendMessageWithMessageToDestinationWithHeaders(message, toDestination, withHeaders);
-			}
-		} else {
-			this._mStompClient.sendMessageWithMessageToDestination(message, toDestination);
-		}
+		this._mStompClient.sendMessageWithMessageToDestinationWithHeadersWithReceipt(message, toDestination, withHeaders, withReceipt);
 	}
 
     private _notify(type: string, destination: string, response: any): void {
