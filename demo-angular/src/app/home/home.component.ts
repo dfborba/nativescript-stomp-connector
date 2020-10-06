@@ -1,27 +1,28 @@
 import { StompConnector, StompMessage } from 'nativescript-stomp-connector';
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
+import { ObservableArray } from "@nativescript/core";
 
 @Component({
     selector: "Home",
     templateUrl: "./home.component.html"
 })
 export class HomeComponent implements OnInit {
-    private url = "ws://10.0.0.2:8080/chat/websocket";
+    private url = "ws://10.0.0.2:8080/greetings/websocket";
     private stompClient: StompConnector;
     public connectionStatus: string = 'Not connected';
-    public logs1: Array<StompMessage>;
-    public logs2: Array<StompMessage>;
+    public logs: ObservableArray<string>;
 
     public messageContent: string = '';
+    public token: string = "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkYm9yYmEiLCJleHAiOjE2MDIwMDU0OTYsImlhdCI6MTYwMTk4NzQ5Nn0.nfsJfHIE6yiUqx9lxd7_z0v-UKdSKW3IW-_uHWgkP1KDfwVlbI8kFqcN6NcsOpFuZ9mFa6nfCcK0w_EQI2RRwA";
+
+    public isConnected = false;
 
     constructor(private _changeDetectorRef: ChangeDetectorRef) {
         this.stompClient = new StompConnector();
-        this.logs1 = new Array<StompMessage>();
-        this.logs2 = new Array<StompMessage>();
+        this.logs = new ObservableArray<string>();
     }
 
     ngOnInit(): void {
-        // Init your component properties here.
         this.connect();
     }
 
@@ -29,53 +30,78 @@ export class HomeComponent implements OnInit {
         this.connectionStatus = 'Trying to connect';
         this.stompClient.connect({
             brokerURL: this.url,
+            autoReconnect: true,
+            reconnectDelay: 6000,
             connectHeaders: {
-                "X-Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhOWM4NGZjZTdiMDU0Njk2YmI0N2Q1YTkxZDVhMDEwMCIsInJvbGUiOiJQQVJUTkVSIiwiaXNzIjoiV2l0ZnkuaW8iLCJhY2NlcHRfdGVybXMiOnRydWUsImVtYWlsX2NvbmZpcm1lZCI6dHJ1ZSwiZXhwIjoxNjA5MjAwNTU3LCJpYXQiOjE2MDEzMzgxNTd9.WxsshIz33Sb8EtJAH0VG2UtO1CYMZ4oPO7hTVvvMruT_OdPz1uWlOtiU_pruuV4h7LaZ4ut-ar5PpccYSRe2ng",
+                "X-Authorization": this.token,
             },
             onConnect: () => {
-                console.log("------------------ ON CONNECT -------------------");
                 this.connectionStatus = 'CONNECTED';
-                this._changeDetectorRef.detectChanges();
+                this.logs.push('CONNECTED');
+                this.isConnected = true;
+                if (!this._changeDetectorRef['destroyed']) {
+					this._changeDetectorRef.detectChanges();
+				}
+            },
+            onReconnect: () => {
+                this.connectionStatus = 'CONNECTED';
+                this.logs.push('CONNECTED');
+                this.isConnected = true;
+                if (!this._changeDetectorRef['destroyed']) {
+					this._changeDetectorRef.detectChanges();
+				}
             },
             onStompError: (error) => {
-                console.log("------------------- ON ERROR --------------------");
-                console.log(error);
-                console.log("-------------------------------------------------");
                 this.connectionStatus = 'ERROR';
-                this._changeDetectorRef.detectChanges();
+                this.logs.push('ERROR');
+                this.logs.push(error);
             },
+            onDisconnect: () => {
+                this.connectionStatus = 'DISCONNECT';
+                this.isConnected = false;
+                if (!this._changeDetectorRef['destroyed']) {
+					this._changeDetectorRef.detectChanges();
+				}
+                this.logs.push('DISCONNECT');
+            },
+            debug: (msg: string) => {
+                this.logs.push(`#DEBUG ${msg}`);
+            }
         });
     }
 
-    subscribeToMessage1() {
-        this.stompClient.topic(
-            '/queue/messages/chat-id-2f33c217-7e76-4adf-801f-db7822f76975',
-            (response: StompMessage) => {
-                console.log("------------------ SUBSCRIPTION RESPONSE -------------------");
-                console.dir(response);
-                this.logs1.push(response);
-                this._changeDetectorRef.detectChanges();
-            });
+    disconnect() {
+        this.stompClient.disconnect();
     }
 
-    subscribeToMessage2() {
+    subscribeToTopic() {
         this.stompClient.topic(
-            '/queue/messages/chat-id-e8919486-7960-48db-b73a-746bdda23b91',
+            '/topic/broadcast',
             (response: StompMessage) => {
                 console.log("------------------ SUBSCRIPTION RESPONSE -------------------");
                 console.dir(response);
-                this.logs2.push(response);
+                this.logs.push(JSON.stringify(response.payload));
                 this._changeDetectorRef.detectChanges();
             });
     }
 
     sendMessage() {
         this.stompClient.send(
-            JSON.stringify({ content: this.messageContent }),
-            '/app/chat/2f33c217-7e76-4adf-801f-db7822f76975', 
-            {
-                "X-Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhOWM4NGZjZTdiMDU0Njk2YmI0N2Q1YTkxZDVhMDEwMCIsInJvbGUiOiJQQVJUTkVSIiwiaXNzIjoiV2l0ZnkuaW8iLCJhY2NlcHRfdGVybXMiOnRydWUsImVtYWlsX2NvbmZpcm1lZCI6dHJ1ZSwiZXhwIjoxNjA5MjAwNTU3LCJpYXQiOjE2MDEzMzgxNTd9.WxsshIz33Sb8EtJAH0VG2UtO1CYMZ4oPO7hTVvvMruT_OdPz1uWlOtiU_pruuV4h7LaZ4ut-ar5PpccYSRe2ng",
-                "content-type": "application/json" 
+            { message: this.messageContent, destination: '/app/greetings'},
+            () => { 
+                this.logs.push('Message just sent!');
+            });
+    }
+
+    sendMessageAsObject() {
+        this.stompClient.send(
+            { 
+                message: JSON.stringify({ content: this.messageContent }), 
+                destination: '/app/greetings',
+                withHeaders: { "content-type": "application/json" }
+            },
+            () => { 
+                this.logs.push('Message just sent!');
             });
     }
 }

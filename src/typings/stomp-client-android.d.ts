@@ -36,8 +36,16 @@ declare module io {
 		}
 
 		export module disposables {
-			export class CompositeDisposable {}
-			export class Disposable {}
+			export class CompositeDisposable extends java.lang.Object {
+				public static class: java.lang.Class<io.reactivex.disposables.CompositeDisposable>;
+				public add(disposable: io.reactivex.disposables.Disposable): boolean;
+				public dispose(): void;
+			}
+
+			export class Disposable extends java.lang.Object {
+				public static class: java.lang.Class<io.reactivex.disposables.Disposable>;
+				public dispose(): void;
+			}
 		}
 
 		export class Flowable<T> extends java.lang.Object {
@@ -88,9 +96,9 @@ declare module ua {
 				public send(stompMessage: ua.naiksoftware.stomp.dto.StompMessage): io.reactivex.Completable;
 				public sendHeartBeat(pingMessage: string): void;
 				public lifecycle(): io.reactivex.Flowable<ua.naiksoftware.stomp.dto.LifecycleEvent>;
-				public reconnect(): void;z
+				public reconnect(): void;
 				public disconnect(): void;
-				public disconnectCompletable(): void;
+				public disconnectCompletable(): io.reactivex.Completable;
 				public topic(destinationPath: string): io.reactivex.Flowable<ua.naiksoftware.stomp.dto.StompMessage>;
 				public topic(destinationPath: string, stompHeaders: java.util.List<ua.naiksoftware.stomp.dto.StompHeader>): io.reactivex.Flowable<ua.naiksoftware.stomp.dto.StompMessage>;
 				public isConnected(): boolean;

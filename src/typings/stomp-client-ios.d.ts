@@ -1,29 +1,34 @@
 
- interface StompClientLibDelegate extends NSObjectProtocol {
-	stompClient?(client: StompClientLib): void;
-	stompClientDidReceiveMessageWithJSONBody?(client: StompClientLib, jsonBody: string): void;
-	stompClientDidReceiveMessageWithJSONBodyWithHeader?(client: StompClientLib, jsonBody: string, headers: any): void;
-	stompClientDidReceiveMessageWithJSONBodyWithHeaderWithDestination?(client: StompClientLib, jsonBody: string, headers: any, destination: string): void;
-	stompClientDidConnect?(client: StompClientLib): void;
-	stompClientDidDisconnect?(client: StompClientLib): void;
-	serverDidSendReceiptWithReceiptId?(client: StompClientLib, receiptId: string): void;
-	serverDidSendError?(client: StompClientLib): void;
-	serverDidSendErrorWithErrorMessage?(client: StompClientLib, description: string): void;
-	serverDidSendErrorWithErrorMessageDetailedErrorMessage ?(client: StompClientLib, description: string, message: string): void;
-	serverDidSendPing?(): void;
+interface StompClientLibDelegate extends NSObjectProtocol {
+	stompClientWithClientDidReceiveMessageWithJSONBody?(client: any, jsonBody: string): void;
+	stompClientWithClientDidReceiveMessageWithJSONBodyAkaStringBody?(client: any, jsonBody: string, stringBody: string): void;
+	stompClientWithClientDidReceiveMessageWithJSONBodyAkaStringBodyWithHeader(client: any, jsonBody: string, stringBody: string, headers: any): void;
+	stompClientWithClientDidReceiveMessageWithJSONBodyAkaStringBodyWithHeaderWithDestination(client: any, jsonBody: string, stringBody: string, headers: any, destination: string): void;
+	stompClientDidConnectWithClient(client: any): void;
+	stompClientDidDisconnectWithClient(client: any): void;
+	serverDidSendReceiptWithClientWithReceiptId(client: any, receiptId: string): void;
+	serverDidSendErrorWithClient(client: any): void;
+	serverDidSendErrorWithClientWithErrorMessage(client: any, description: string): void;
+	serverDidSendErrorWithClientWithErrorMessageDetailedErrorMessage(client: any, description: string, message: string): void;
+	serverDidSendPing(): void;
 }
+
+declare var StompClientLibDelegate: {
+	prototype: StompClientLibDelegate
+};
 
 declare class StompClientLib extends NSObject {
 	static alloc(): StompClientLib;
 	static new(): StompClientLib;
 	delegate: StompClientLibDelegate;
-	public openSocketWithURLRequest(request: NSURLRequest, delegate: StompClientLibDelegate);
-	public openSocketWithURLRequest(request: NSURLRequest, delegate: StompClientLibDelegate, connectionHeaders: any);
+	public openSocketWithURLRequestWithRequestDelegate(request: NSURLRequest, delegate: StompClientLibDelegate);
+	public openSocketWithURLRequestWithRequestDelegateConnectionHeaders(request: NSURLRequest, delegate: StompClientLibDelegate, connectionHeaders: any);
 	public isConnected(): boolean;
 	public disconnect();
 	public sendMessageToDestination(message: string, destination: string);
-	public sendMessageToDestinationWithHeaders(message: string, destination: string, headers: any);
-	public sendMessageToDestinationWithHeadersWithReceipt(message: string, destination: string, headers: any, receipt: string);
-	public subscribe(destination: string);
-	public unsubscribe(destination: string);
+	public sendMessageWithMessageToDestination(message: string, destination: string);
+	public sendMessageWithMessageToDestinationWithHeaders(message: string, destination: string, headers: any);
+	public sendMessageWithMessageToDestinationWithHeadersWithReceipt(message: string, destination: string, headers: any, receipt: string);
+	public subscribeWithDestination(destination: string);
+	public unsubscribeWithDestination(destination: string);
 }
