@@ -19,7 +19,6 @@ export declare class StompConfig {
     heartbeatIncoming?: number;
     heartbeatOutgoing?: number;
     connectHeaders?: StompHeaders;
-    beforeConnect?: () => void | Promise<void>;
     onConnect?: () => void;
     onReconnect?: () => void;
     onDisconnect?: () => void;
