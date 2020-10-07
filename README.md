@@ -1,22 +1,27 @@
+:warning: **This plugin is under construction.**
+
 # nativescript-stomp-connector
 
-WebSocket connector for STOMP protocol.
-
-**This plugin is under construction.**
+Client connector for Websocket through STOMP protocol.
 
 This plugin use the [**NaikSoftware/StompProtocolAndroid**](https://github.com/NaikSoftware/StompProtocolAndroid) for Android and [**WrathChaos/StompClientLib**](https://github.com/WrathChaos/StompClientLib) for iOS.
 
-Run nativescript cli to install this plugin
-```javascript
-tns plugin add nativescript-stomp-connector
-```
-# TODO
+### #TODO
 
 - [ ] Migrate to Nativescript 7;
 - [ ] Add nativescript core demo;
 - [ ] Add repository for service example using spring boot to this README;
 - [ ] Add Troubleshooting to this README;
-- [ ] Add API usage;
+- [ ] Improve API documentation;
+
+
+## Installation
+
+Run nativescript cli to install this plugin
+
+```javascript
+tns plugin add nativescript-stomp-connector
+```
 
 # Usage
 
