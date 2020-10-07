@@ -1,42 +1,141 @@
 # nativescript-stomp-connector
 
-# UNDER CONSTRUCTION (do not use this plugin yet)
+## UNDER CONSTRUCTION (do not use this plugin yet)
 
-Add your plugin badges here. See [nativescript-urlhandler](https://github.com/hypery2k/nativescript-urlhandler) for example.
+WebSocket connector for STOMP protocol.
 
-Then describe what's the purpose of your plugin. 
+**This plugin is under construction.**
 
-In case you develop UI plugin, this is where you can add some screenshots.
+This plugin use the [**NaikSoftware/StompProtocolAndroid**](https://github.com/NaikSoftware/StompProtocolAndroid) for Android and [**WrathChaos/StompClientLib**](https://github.com/WrathChaos/StompClientLib) for iOS.
 
-## (Optional) Prerequisites / Requirements
-
-Describe the prerequisites that the user need to have installed before using your plugin. See [nativescript-firebase plugin](https://github.com/eddyverbruggen/nativescript-plugin-firebase) for example.
-
-## Installation
-
-Describe your plugin installation steps. Ideally it would be something like:
-
+Run nativescript cli to install this plugin
 ```javascript
 tns plugin add nativescript-stomp-connector
 ```
+# TODO
 
-## Usage 
+- [ ] Migrate to Nativescript 7;
+- [ ] Add nativescript core demo;
+- [ ] Add repository for service example using spring boot to this README;
+- [ ] Add Troubleshooting to this README;
+- [ ] Add API usage;
 
-Describe any usage specifics for your plugin. Give examples for Android, iOS, Angular if needed. See [nativescript-drop-down](https://www.npmjs.com/package/nativescript-drop-down) for example.
-	
-	```javascript
-    Usage code snippets here
-    ```)
+# Usage
+
+## Core
+
+**Under construction**
+
+## TypeScript
+
+Import the **StompConnector** in your component
+```typescript
+import { StompConnector, StompMessage } from 'nativescript-stomp-connector';
+````
+### Call Connnect
+```typescript
+private _wsUrl = "ws://{your-server}:{port}/{path}/websocket";
+public stompClient: StompConnector;
+
+constructor(private _changeDetectorRef: ChangeDetectorRef) {
+	this.stompClient = new StompConnector();
+}
+
+public connect(): void {
+	this.stompClient.connect({
+		brokerURL: this._wsUrl,
+		onConnect: () => {
+			console.log(`==== CONNECTED ===`);
+		},
+		onReconnect: () => {
+			console.log(`==== RECONNECTED ===`);
+		},
+		onStompError: (error) => {
+			console.error(error);
+		},
+		onDisconnect: () => {
+			console.log(`==== DISCONNECTED ===`);
+		},
+		debug: (msg: string) => {
+			console.log(msg);
+		}
+	} as StompConfig);
+}
+```
+
+### Disconnect
+```typescript
+public disconnect(): void {
+	this.stompClient.disconnect();
+}
+```
+
+### Subscribe to topic
+```typescript
+public subscribeToTopic(): void {
+	this.stompClient.topic('/topic/broadcast', (response: StompMessage) => { console.dir(response); });
+}
+```
+
+### Send message
+```typescript
+sendMessageAsObject() {
+	this.stompClient.send({ 
+		message: JSON.stringify({ content: this.messageContent }), 
+		destination: '/app/greetings',
+		withHeaders: { "content-type": "application/json" }
+	}, () => { console.log('Message just sent!'); });
+}
+```
 
 ## API
 
-Describe your plugin methods and properties here. See [nativescript-feedback](https://github.com/EddyVerbruggen/nativescript-feedback) for example.
-    
+### StompConnector
+
+**connect(config)**
+
+This function will connect to your stomp broker and call the callback onConnect after finish it;
+
+**disconnect()**
+
+Disconnect the stomp broker;
+
+**isConnected()** 
+
+Return true if broker is connected;
+
+**topic(destination, successCallBack, failCallBack)**
+
+Subscribe to topic passing destination and successCallBack as mandatory parameters. 
+
+**send(request, successCallBack, failCallBack)** 
+
+Send messsage to stomp broker;
+
+### StompConfiguration
 | Property | Default | Description |
 | --- | --- | --- |
-| some property | property default value | property description, default values, etc.. |
-| another property | property default value | property description, default values, etc.. |
-    
+| brokerURL | empty | The websocket url. **Mandatory** |
+| autoReconnect | false | **Android only for now** |
+| reconnectDelay | 5000 | The delay between attempts to reconnect in ms |
+| connectHeaders | empty | [key: string]: string; > example: { 'content-type': 'application/json' } |
+| **onConnect()** | Function | callback called on websocket connection successful |
+| **onReconnect()** | Function | callback called on server auto reconnected. **Android only for now** |
+| **onDisconnect()** | Function | callback called on webscoket disconnect | 
+| **onStompError(error)** | Function | called when got an exception |
+| **debug(msg)** | Function | Use this to have more logs |
+
+
+## Native Component
+
+| Android                | iOS      |
+|:-----------------------|:---------|
+| [**NaikSoftware/StompProtocolAndroid**](https://github.com/NaikSoftware/StompProtocolAndroid) | [**WrathChaos/StompClientLib**](https://github.com/WrathChaos/StompClientLib) |
+
+## Author
+
+Daniel Borba, daniel@witfy.io
+
 ## License
 
 Apache License Version 2.0, January 2004
