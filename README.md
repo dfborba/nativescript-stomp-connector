@@ -1,7 +1,5 @@
 # nativescript-stomp-connector
 
-## UNDER CONSTRUCTION (do not use this plugin yet)
-
 WebSocket connector for STOMP protocol.
 
 **This plugin is under construction.**
