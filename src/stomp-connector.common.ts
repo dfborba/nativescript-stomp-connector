@@ -38,8 +38,8 @@ export declare class StompConnector {
     private _callbacks: {
 		topics: [{ destination: string, callback: (payload: StompMessage) => void, fail?: (error: StompFailMessage) => void }?], 
         messages: [{ destination: string, callback: () => void, fail?: (error: StompFailMessage) => void  }?]};
+        
     private _mStompClient: any;
-    private _compositeDisposable?: any;
     private _config: StompConfig;
     
     constructor();
@@ -50,7 +50,8 @@ export declare class StompConnector {
     public topic(destination: string, callback: (payload: StompMessage) => void, fail?: (payload: StompFailMessage) => {}): void;
     public send(request: StompSendMessage, callback?: () => void, fail?: (payload: StompFailMessage) => {}): void
 
-    private _notify(type: string, destination: string, response: any): void;
     private _callDebug(msg: string): void;
+    private _notify(type: string, destination: string, response: any): void;
     private _removeFromCallback(type: string, destination: string): void
 }
+

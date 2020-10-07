@@ -1,4 +1,4 @@
-import { StompConfig, StompMessage } from './stomp-connector.common';
+import { StompConfig, StompFailMessage, StompHeaders, StompMessage, StompSendMessage } from './stomp-connector.common';
 
 class MyStompClientLibDelegateImpl extends NSObject implements StompClientLibDelegate {
 	public static ObjCProtocols = [ StompClientLibDelegate ];
@@ -14,91 +14,55 @@ class MyStompClientLibDelegateImpl extends NSObject implements StompClientLibDel
         return <MyStompClientLibDelegateImpl>super.new();
 	}
 
-	stompClientWithClientDidReceiveMessageWithJSONBody(client: any, jsonBody: string): void {
-		console.log(`stompClientDidReceiveMessageWithJSONBodyWithJSONBody: ${jsonBody}`);
+	stompClientWithClientDidReceiveMessageWithJSONBodyAkaStringBodyWithHeaderWithDestination(client: StompClientLib, jsonBody: string, stringBody: string, headers: any, destination: string): void {
 		if (!!this._owner) {
-
-		}
-	}
-
-	stompClientWithClientDidReceiveMessageWithJSONBodyAkaStringBody(client: any, jsonBody: string, stringBody: string): void {
-		console.log(`stompClientDidReceiveMessageWithJSONBodyWithJSONBodyAkaStringBody: ${jsonBody}`);
-		if (!!this._owner) {
-
-		}
-	}
-
-	stompClientWithClientDidReceiveMessageWithJSONBodyAkaStringBodyWithHeader(client: any, jsonBody: string, stringBody: string, headers: any): void {
-		console.log(`stompClientDidReceiveMessageWithJSONBodyWithJSONBodyAkaStringBodyWithHeader: ${jsonBody} | ${headers}`);
-		if (!!this._owner) {
-			
-		}
-	}
-
-	stompClientWithClientDidReceiveMessageWithJSONBodyAkaStringBodyWithHeaderWithDestination(client: any, jsonBody: string, stringBody: string, headers: any, destination: string): void {
-		console.log(`stompClientDidReceiveMessageWithJSONBodyWithJSONBodyAkaStringBodyWithHeaderWithDestination: ${jsonBody} | ${stringBody} | ${headers} | ${destination}`);
-		if (!!this._owner) {
+			this._owner.get()._callDebug(`stompClientDidReceiveMessageWithJSONBodyWithJSONBodyAkaStringBodyWithHeaderWithDestination: ${jsonBody} | ${stringBody} | ${headers} | ${destination}`);
 			this._owner.get()._notify('topics', destination, stringBody);
 		}
 	}
 
-	stompClientDidConnectWithClient(client: any): void {
-		console.log(`stompClientDidConnectWithClient`);
+	stompClientDidConnectWithClient(client: StompClientLib): void {
 		if (!!this._owner) {
+			this._owner.get()._callDebug(`stompClientDidConnectWithClient`);
 			this._owner.get()._config.onConnect();	
 		}
 	}
 
-	stompClientDidDisconnectWithClient(client: any): void {
-		console.log(`stompClientDidDisconnectWithClient`);
+	stompClientDidDisconnectWithClient(client: StompClientLib): void {
 		if (!!this._owner) {
+			this._owner.get()._callDebug(`stompClientDidDisconnectWithClient`);
 			this._owner.get()._config.onDisconnect();
 		}
 	}
 	
-	serverDidSendReceiptWithClientWithReceiptId(client: any, receiptId: string): void {
-		console.log(`serverDidSendReceiptWithClientWithReceiptId | ${receiptId}`);
+	serverDidSendReceiptWithClientWithReceiptId(client: StompClientLib, receiptId: string): void {
 		if (!!this._owner) {
-			
+			this._owner.get()._callDebug(`serverDidSendReceiptWithClientWithReceiptId | ${receiptId}`);
 		}
 	}
 	
-	serverDidSendErrorWithClient(client: any): void {
-		console.log(`serverDidSendErrorWithClient`);
+	serverDidSendErrorWithClientWithErrorMessageDetailedErrorMessage(client: StompClientLib, description: string, message: string): void {
 		if (!!this._owner) {
-			
-		}
-	}
-	
-	serverDidSendErrorWithClientWithErrorMessage(client: any, description: string): void {
-		console.log(`serverDidSendErrorWithClientWithErrorMessage: ${description}`);
-		if (!!this._owner) {
-			this._owner.get()._config.onStompError.call(description);
-		}
-	}
-
-	serverDidSendErrorWithClientWithErrorMessageDetailedErrorMessage(client: any, description: string, message: string): void {
-		console.log(`serverDidSendErrorWithClientWithErrorMessageDetailedErrorMessage: ${description} | ${message}`);
-		if (!!this._owner) {
+			this._owner.get()._callDebug(`serverDidSendErrorWithClientWithErrorMessageDetailedErrorMessage: ${description} | ${message}`);
 			this._owner.get()._config.onStompError.call(description + message);
 		}
 	}
 
 	serverDidSendPing(): void {
-		console.log(`serverDidSendPing`);
 		if (!!this._owner) {
-			
+			this._owner.get()._callDebug(`serverDidSendPing`);
 		}
 	}
 }
 
 export class StompConnector {
 	private _callbacks: {
-		topics: [{ destination: string, callback: (payload: StompMessage) => void }?], 
-        messages: [{ destination: string, callback: (payload: StompMessage) => void }?]};
+		topics: [{ destination: string, callback: (payload: StompMessage) => void, fail?: (error: StompFailMessage) => void }?], 
+        messages: [{ destination: string, callback: () => void, fail?: (error: StompFailMessage) => void  }?]};
 	
+	private _mStompClient: any;
 	private _iosDelegate: MyStompClientLibDelegateImpl;
-    private _mStompClient: any;
+	
 	private _config: StompConfig;
 
 	constructor() {
@@ -107,50 +71,101 @@ export class StompConnector {
 	}
 
     public connect(config: StompConfig): void {
-		this._config = config;
-
-		if (!!this._mStompClient) {
+		if (!!this.mStompClient) {
 			this.disconnect();
 		}
 
-		this._mStompClient = StompClientLib.new();
+		this._config = config;
+		this.mStompClient = StompClientLib.new();
+
+		let header: NSDictionary<any, any>;
 		if (!!config.connectHeaders) {
-			let keys = Object.keys(config.connectHeaders)
-			let values = [];
-			keys.forEach(key => {
-				values.push(config.connectHeaders[key]);
-			})
-			
-			let header = new NSDictionary({objects: values, forKeys: keys });
-			this._mStompClient.openSocketWithURLRequestWithRequestDelegateConnectionHeaders(
-				NSURLRequest.requestWithURL(NSURL.URLWithString(config.brokerURL)),
-				this._iosDelegate,
-				header);
-		} else {
-			this._mStompClient.openSocketWithURLRequestWithRequestDelegate(
-				NSURLRequest.requestWithURL(NSURL.URLWithString(config.brokerURL)),
-				this._iosDelegate);
+			header = this._buildHeader(config.connectHeaders);
 		}
+
+		this.mStompClient.openSocketWithURLRequestWithRequestDelegateConnectionHeaders(
+			NSURLRequest.requestWithURL(NSURL.URLWithString(config.brokerURL)),
+			this._iosDelegate,
+			header);
+	}
+
+	private _buildHeader(connectHeaders: StompHeaders) {
+		let keys = Object.keys(connectHeaders)
+		let values = [];
+		keys.forEach(key => {
+			values.push(connectHeaders[key]);
+		})
+
+		return new NSDictionary({objects: values, forKeys: keys });
 	}
 
     public disconnect(): void {
-		this._mStompClient.disconnect();
+		this._config.autoReconnect = false;
+		this.mStompClient.disconnect();
+		this.mStompClient = null;
 	}
 
-    public topic(destination: string, callback: (payload: StompMessage) => void): void {
-		this._callbacks['topics'].push({ destination: destination, callback: callback });
-		this._mStompClient.subscribeWithDestination(destination);
+    public topic(
+		destination: string,
+		callback: (payload: StompMessage) => {},
+		fail?: (payload: StompFailMessage) => {}
+	) {
+		this._callDebug(`>>>>> attempt to subscribe to topic: ${destination}`);
+
+		this._callbacks['topics'].push({ 
+			destination: destination, 
+			callback: callback, 
+			fail: !!fail ? fail : (error) => { console.error(error) } });
+
+		this.mStompClient.subscribeWithHeaderWithDestinationWithHeader(destination, null);
 	}
 
-    public send(message: string, toDestination: string, withHeaders?: any, withReceipt?: string): void {
-		this._mStompClient.sendMessageWithMessageToDestinationWithHeadersWithReceipt(message, toDestination, withHeaders, withReceipt);
+    public send(request: StompSendMessage, callback?: () => void, fail?: (payload: StompFailMessage) => {}) {
+		this._callDebug(`>>>>> attempt to send message to destination: ${request.destination}`);
+
+		if (!!callback) {
+			this._callbacks['topics'].push({ 
+				destination: request.destination, 
+				callback: callback, 
+				fail: !!fail ? fail : (error) => { console.error(error) } });
+		}
+
+		let header: NSDictionary<any, any>;
+		if (!!request.withHeaders) {
+			header = this._buildHeader(request.withHeaders);
+		}
+
+		this.mStompClient.sendMessageWithMessageToDestinationWithHeadersWithReceipt(
+			request.message, request.destination, header, request.withReceipt);
+	}
+	
+	set mStompClient(stompClient: StompClientLib) {
+		this._mStompClient = stompClient;
 	}
 
-    private _notify(type: string, destination: string, response: any): void {
-		var topics = this._callbacks[type];
-		if (topics.length > 0) {
-			const topicEvent = topics.find((topic) => topic.destination === destination);
-			topicEvent.callback({ destination: destination, payload: JSON.parse(response)});
+	get mStompClient() {
+		return this._mStompClient;
+	}
+
+	private _callDebug(msg: string) {
+		if (!!this._config.debug) {
+			this._config.debug(msg);
+		}
+	}
+
+    private _notify(type: string, destination: string, response?: any, error?: any): void {
+		var _cb = this._callbacks[type];
+		if (_cb.length > 0) {
+			const callBackEvent = _cb.find((cbByType) => cbByType.destination === destination);
+			if (!!error) {
+				callBackEvent.error({ destination: destination, error: error });
+			} else {
+				if (!!response) {
+					callBackEvent.callback({ destination: destination, payload: response});
+				} else {
+					callBackEvent.callback();
+				}
+			}
 		}
 	}
 
