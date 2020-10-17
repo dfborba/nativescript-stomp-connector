@@ -48,6 +48,7 @@ export declare class StompConnector {
     public disconnect(): void;
     public isConnected(): boolean;
     public topic(destination: string, callback: (payload: StompMessage) => void, fail?: (payload: StompFailMessage) => {}): void;
+    public unsubscribe(destination: string, callback: () => void): void;
     public send(request: StompSendMessage, callback?: () => void, fail?: (payload: StompFailMessage) => {}): void
 
     private _callDebug(msg: string): void;

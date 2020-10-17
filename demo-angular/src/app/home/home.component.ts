@@ -1,4 +1,4 @@
-import { StompConnector, StompMessage } from 'nativescript-stomp-connector';
+import { StompConfig, StompConnector, StompMessage } from 'nativescript-stomp-connector';
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { ObservableArray } from "@nativescript/core";
 
@@ -13,7 +13,7 @@ export class HomeComponent implements OnInit {
     public logs: ObservableArray<string>;
 
     public messageContent: string = '';
-    public token: string = "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkYm9yYmEiLCJleHAiOjE2MDIwMDU0OTYsImlhdCI6MTYwMTk4NzQ5Nn0.nfsJfHIE6yiUqx9lxd7_z0v-UKdSKW3IW-_uHWgkP1KDfwVlbI8kFqcN6NcsOpFuZ9mFa6nfCcK0w_EQI2RRwA";
+    public token: string = "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkYm9yYmEiLCJleHAiOjE2MDI5ODkwNTksImlhdCI6MTYwMjk3MTA1OX0.4FaztQbhxzpjFegGdHUL_kVM7ypnocWIKlHXgUd1zdOXJe5RvpYOKPLdYi7WCX0zPorWvhxqxjoMApqgkPBEYw";
 
     public isConnected = false;
 
@@ -67,7 +67,7 @@ export class HomeComponent implements OnInit {
             debug: (msg: string) => {
                 this.logs.push(`#DEBUG ${msg}`);
             }
-        });
+        } as StompConfig);
     }
 
     disconnect() {
@@ -83,6 +83,12 @@ export class HomeComponent implements OnInit {
                 this.logs.push(JSON.stringify(response.payload));
                 this._changeDetectorRef.detectChanges();
             });
+    }
+
+    unsubscribeToTopic() {
+        this.stompClient.unsubscribe('/topic/broadcast', () => {
+            console.log("Unsubscribed successfully");
+        })
     }
 
     sendMessage() {

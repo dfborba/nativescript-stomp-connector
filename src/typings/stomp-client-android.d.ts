@@ -102,6 +102,7 @@ declare module ua {
 				public topic(destinationPath: string): io.reactivex.Flowable<ua.naiksoftware.stomp.dto.StompMessage>;
 				public topic(destinationPath: string, stompHeaders: java.util.List<ua.naiksoftware.stomp.dto.StompHeader>): io.reactivex.Flowable<ua.naiksoftware.stomp.dto.StompMessage>;
 				public isConnected(): boolean;
+				public unsubscribePath(destinationPath: string): io.reactivex.Completable;
 			}
 
 			export module dto {

@@ -47,9 +47,11 @@ export class StompConnector {
 		this._resetTopicSubscriptions();
 		this._resetMessageSubscriptions();
 
+		const that = new WeakRef(this);
+
 		const successCB = new io.reactivex.functions.Consumer<LifecycleEvent>({
 			accept: (lifecycleEvent: LifecycleEvent) => {
-				this._callDebug(`>>>>> LifecycleEvent: ${lifecycleEvent.getType()}`);
+				that.get()._callDebug(`>>>>> LifecycleEvent: ${lifecycleEvent.getType()}`);
 				switch (lifecycleEvent.getType()) {
 					case ua.naiksoftware.stomp.dto.LifecycleEvent.Type.OPENED:
 						config.onConnect();
@@ -72,7 +74,7 @@ export class StompConnector {
 
 		const errorCB = new io.reactivex.functions.Consumer<any>({
 			accept: function (throwable: any /*Throwable*/) {
-				this._callDebug(`>>>>> connect error: ${JSON.stringify(throwable.getMessage())}`);
+				that.get()._callDebug(`>>>>> connect error: ${JSON.stringify(throwable.getMessage())}`);
 				config.onStompError(JSON.stringify(throwable));
 			},
 		});
@@ -164,6 +166,22 @@ export class StompConnector {
 					.subscribe(_subscribeCallback, _subscribeCallbackError)
 			);
 		}
+	}
+
+	public unsubscribe(destination: string, callback?: () => void) {
+		const that = new WeakRef(this);
+
+		this.mStompClient.unsubscribePath(destination)
+			.subscribe(new io.reactivex.functions.Action({
+				run: function() {
+					that.get()._callDebug(`>>>>> unsubscribePath from destination ${destination}`);
+					this.callback();
+				}
+			}), new io.reactivex.functions.Consumer({
+				accept: function (throwable: any /*Throwable*/) {
+					that.get()._callDebug(`>>>>> unsubscribePath message error from destination: ${destination} | error: ${JSON.stringify(throwable)}`);
+				},
+			}))
 	}
 
 	private _resetTopicSubscriptions() {
