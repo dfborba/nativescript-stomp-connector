@@ -68,6 +68,7 @@ declare module io {
 			public subscribe(
 				onComplete: io.reactivex.functions.Action,
 				onError: io.reactivex.functions.Consumer<any>): io.reactivex.disposables.Disposable;
+			public onErrorComplete(): io.reactivex.Completable;
 		}
 	}
 }
@@ -102,7 +103,8 @@ declare module ua {
 				public topic(destinationPath: string): io.reactivex.Flowable<ua.naiksoftware.stomp.dto.StompMessage>;
 				public topic(destinationPath: string, stompHeaders: java.util.List<ua.naiksoftware.stomp.dto.StompHeader>): io.reactivex.Flowable<ua.naiksoftware.stomp.dto.StompMessage>;
 				public isConnected(): boolean;
-				public unsubscribePath(destinationPath: string): io.reactivex.Completable;
+				public getTopicId(dest: string): any;
+				public unsubscribePath(dest: string): io.reactivex.Completable;
 			}
 
 			export module dto {
@@ -139,6 +141,16 @@ declare module ua {
 					public getPayload(): string;
 					public getStompHeaders(): java.util.List<ua.naiksoftware.stomp.dto.StompHeader>;
 					public findHeader(key: string): string;
+				}
+
+				export enum StompCommand {
+					CONNECT = "CONNECT",
+					CONNECTED = "CONNECTED",
+					SEND = "SEND",
+					MESSAGE = "MESSAGE",
+					SUBSCRIBE = "SUBSCRIBE",
+					UNSUBSCRIBE = "UNSUBSCRIBE",
+					UNKNOWN = "UNKNOWN"
 				}
 			}
 		}

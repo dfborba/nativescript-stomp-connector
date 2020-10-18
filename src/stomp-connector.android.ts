@@ -170,18 +170,23 @@ export class StompConnector {
 
 	public unsubscribe(destination: string, callback?: () => void) {
 		const that = new WeakRef(this);
-
-		this.mStompClient.unsubscribePath(destination)
-			.subscribe(new io.reactivex.functions.Action({
-				run: function() {
-					that.get()._callDebug(`>>>>> unsubscribePath from destination ${destination}`);
-					this.callback();
-				}
-			}), new io.reactivex.functions.Consumer({
-				accept: function (throwable: any /*Throwable*/) {
-					that.get()._callDebug(`>>>>> unsubscribePath message error from destination: ${destination} | error: ${JSON.stringify(throwable)}`);
-				},
-			}))
+		if (!!this.mStompClient 
+			&& this.mStompClient.isConnected()
+				&& !!this.mStompClient.getTopicId(destination)) {
+			this.mStompClient.unsubscribePath(destination)
+				.subscribe(new io.reactivex.functions.Action({
+					run: function() {
+						that.get()._removeFromCallback('topics', destination);
+						that.get()._callDebug(`>>>>> unsubscribePath from destination ${destination}`);
+					}
+				}), new io.reactivex.functions.Consumer({
+					accept: function (throwable: any /*Throwable*/) {
+						that.get()._callDebug(`>>>>> unsubscribePath message error from destination: ${destination} | error: ${JSON.stringify(throwable)}`);
+					},
+				}));
+		} else {
+			that.get()._callDebug(`>>>>> unsubscribePath not possible because you never subscribe to ${destination}`);
+		}
 	}
 
 	private _resetTopicSubscriptions() {
@@ -243,7 +248,7 @@ export class StompConnector {
 			headers.add(new ua.naiksoftware.stomp.dto.StompHeader('destination', request.destination));
 		}
 
-		return new ua.naiksoftware.stomp.dto.StompMessage('SEND', headers, request.message);
+		return new ua.naiksoftware.stomp.dto.StompMessage(ua.naiksoftware.stomp.dto.StompCommand.SEND, headers, request.message);
 	}
 
 	private _resetMessageSubscriptions() {
