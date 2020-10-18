@@ -116,12 +116,22 @@ export class StompConnector {
 	) {
 		this._callDebug(`>>>>> attempt to subscribe to topic: ${destination}`);
 
-		this._callbacks['topics'].push({ 
-			destination: destination, 
-			callback: callback, 
-			fail: !!fail ? fail : (error) => { console.error(error) } });
+		if (!this._isAlreadySubscribedToTopic(destination)) {
+			this._callbacks['topics'].push({ 
+				destination: destination, 
+				callback: callback, 
+				fail: !!fail ? fail : (error) => { console.error(error) } });
+	
+			this.mStompClient.subscribeWithDestination(destination);
+		} else if (!!fail) {
+			fail({ destination: destination, error: "Already subscribed to topic for destination" });
+		}
+	}
 
-		this.mStompClient.subscribeWithDestination(destination);
+	private _isAlreadySubscribedToTopic(destination: string) {
+		const foundIndex = this._callbacks['topics'].findIndex((topic) => topic.destination === destination);
+		this._callDebug(`>>>>> is topic already subscribed for ${destination}? ${foundIndex !== -1 ? 'YES' : 'NO'}`);
+		return foundIndex !== -1;
 	}
 
 	public unsubscribe(destination: string, callback?: () => void) {
