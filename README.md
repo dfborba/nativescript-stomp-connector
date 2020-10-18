@@ -80,6 +80,13 @@ public subscribeToTopic(): void {
 }
 ```
 
+### Unsubscribe to topic
+```typescript
+unsubscribeToTopic() {
+	this.stompClient.unsubscribe('/topic/broadcast', () => console.log("Unsubscribed successfully"));
+}
+```
+
 ### Send message
 ```typescript
 sendMessageAsObject() {
@@ -110,6 +117,10 @@ Return true if broker is connected;
 **topic(destination, successCallBack, failCallBack)**
 
 Subscribe to topic passing destination and successCallBack as mandatory parameters. 
+
+**unsubscribe(destination, successCallback)**
+
+Unsubscribe to topic by destination.
 
 **send(request, successCallBack, failCallBack)** 
 

@@ -9,9 +9,10 @@
         <Button row="1" class="-outline" col="1" width="150" horizontalAlignment="left" [isEnabled]="isConnected"
             (tap)="disconnect()" text="Disconnect"></Button>    
     </GridLayout>
-    <GridLayout row="1" columns="* *">
-        <Button class="-primary" col="0" width="150" horizontalAlignment="center" (tap)="subscribeToTopic()" text="Topic Broadcast"></Button>
-        <Button class="-primary" col="1" width="150" horizontalAlignment="center" (tap)="unsubscribeToTopic()" text="Unsubscribe to Topic Broadcast"></Button>
+    <GridLayout row="1" columns="* * *">
+        <Button class="-primary" col="0" (tap)="subscribeToTopic()" text="Topic Test"></Button>
+        <Button class="-primary" col="1" (tap)="unsubscribeToTopic()" text="Unsubscribe"></Button>
+        <Button class="-primary" col="2" (tap)="connected()" text="Is connected?"></Button>
     </GridLayout>
     <GridLayout row="2" columns="* auto" class="p-y-10 p-x-20">
         <TextField col="0" class="-input" [(ngModel)]="messageContent"></TextField>

@@ -13,7 +13,7 @@ export class HomeComponent implements OnInit {
     public logs: ObservableArray<string>;
 
     public messageContent: string = '';
-    public token: string = "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkYm9yYmEiLCJleHAiOjE2MDI5ODkwNTksImlhdCI6MTYwMjk3MTA1OX0.4FaztQbhxzpjFegGdHUL_kVM7ypnocWIKlHXgUd1zdOXJe5RvpYOKPLdYi7WCX0zPorWvhxqxjoMApqgkPBEYw";
+    public token: string = "token";
 
     public isConnected = false;
 
@@ -109,5 +109,9 @@ export class HomeComponent implements OnInit {
             () => { 
                 this.logs.push('Message just sent!');
             });
+    }
+
+    connected() {
+        this.logs.push('Is connected? ' + (this.stompClient.isConnected() ? 'YES' : 'NO'));
     }
 }
