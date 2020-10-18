@@ -40,6 +40,7 @@ declare module io {
 				public static class: java.lang.Class<io.reactivex.disposables.CompositeDisposable>;
 				public add(disposable: io.reactivex.disposables.Disposable): boolean;
 				public dispose(): void;
+				public remove(disposable: io.reactivex.disposables.Disposable): void;
 			}
 
 			export class Disposable extends java.lang.Object {
