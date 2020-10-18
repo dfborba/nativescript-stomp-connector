@@ -105,6 +105,10 @@ export class StompConnector {
 		this.mStompClient = null;
 	}
 
+	public isConnected(): boolean {
+		return this.mStompClient.isConnected();
+	}
+
     public topic(
 		destination: string,
 		callback: (payload: StompMessage) => {},
@@ -117,7 +121,18 @@ export class StompConnector {
 			callback: callback, 
 			fail: !!fail ? fail : (error) => { console.error(error) } });
 
-		this.mStompClient.subscribeWithHeaderWithDestinationWithHeader(destination, null);
+		this.mStompClient.subscribeWithDestination(destination);
+	}
+
+	public unsubscribe(destination: string, callback?: () => void) {
+		const that = new WeakRef(this);
+		if (!!this.mStompClient 
+			&& this.mStompClient.isConnected()) {
+			this._removeFromCallback('topics', destination);
+			this.mStompClient.unsubscribeWithDestination(destination);
+		} else {
+			that.get()._callDebug(`>>>>> unsubscribePath not possible because you never subscribe to ${destination}`);
+		}
 	}
 
     public send(request: StompSendMessage, callback?: () => void, fail?: (payload: StompFailMessage) => {}) {
