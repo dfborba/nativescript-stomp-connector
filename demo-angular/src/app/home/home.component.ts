@@ -7,13 +7,13 @@ import { ObservableArray } from "@nativescript/core";
     templateUrl: "./home.component.html"
 })
 export class HomeComponent implements OnInit {
-    private url = "ws://10.0.0.2:8080/broadcast/websocket";
+    private url = "ws://10.0.0.2:8080/greetings/websocket";
     private stompClient: StompConnector;
     public connectionStatus: string = 'Not connected';
     public logs: ObservableArray<string>;
 
     public messageContent: string = '';
-    public token: string = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhOWM4NGZjZTdiMDU0Njk2YmI0N2Q1YTkxZDVhMDEwMCIsInJvbGUiOiJQQVJUTkVSIiwiaXNzIjoiV2l0ZnkuaW8iLCJhY2NlcHRfdGVybXMiOnRydWUsImVtYWlsX2NvbmZpcm1lZCI6dHJ1ZSwiZXhwIjoxNjEwOTY1NDgzLCJpYXQiOjE2MDMwMTY2ODN9.yWBHYVu41DQ9i_kHsyJHbLnlmoyNRplKgvEmm8WHCVLtj28OG0oeK7EOU_Hg0XJPS8sGQynQLeCVaCFTAStH3A";
+    public token: string = "token";
 
     public isConnected = false;
 
@@ -76,26 +76,24 @@ export class HomeComponent implements OnInit {
 
     subscribeToTopic() {
         this.stompClient.topic(
-            '/queue/messages/chat-id-17a1f8da-e338-460b-83b4-afc130d2fe33',
+            '/topic/broadcast',
             (response: StompMessage) => {
                 console.log("------------------ SUBSCRIPTION RESPONSE -------------------");
                 console.dir(response);
                 this.logs.push(JSON.stringify(response.payload));
-                if (!this._changeDetectorRef['destroyed']) {
-					this._changeDetectorRef.detectChanges();
-				}
+                this._changeDetectorRef.detectChanges();
             });
     }
 
     unsubscribeToTopic() {
-        this.stompClient.unsubscribe('/queue/messages/chat-id-17a1f8da-e338-460b-83b4-afc130d2fe33', () => {
+        this.stompClient.unsubscribe('/topic/broadcast', () => {
             console.log("Unsubscribed successfully");
         })
     }
 
     sendMessage() {
         this.stompClient.send(
-            { message: this.messageContent, destination: '/queue/messages/chat-id-17a1f8da-e338-460b-83b4-afc130d2fe33'},
+            { message: this.messageContent, destination: '/app/greetings'},
             () => { 
                 this.logs.push('Message just sent!');
             });
@@ -105,7 +103,7 @@ export class HomeComponent implements OnInit {
         this.stompClient.send(
             { 
                 message: JSON.stringify({ content: this.messageContent }), 
-                destination: '/queue/messages/chat-id-17a1f8da-e338-460b-83b4-afc130d2fe33',
+                destination: '/app/greetings',
                 withHeaders: { "content-type": "application/json" }
             },
             () => { 
