@@ -21,7 +21,7 @@
     <GridLayout rows="* auto" row="3" col="0">
         <ListView [items]="logs">
             <ng-template let-log="item" let-i="index" let-odd="odd" let-even="even">
-                <StackLayout padding="10" margin="4" backgroundColor="#555" borderRadius="10">
+                <StackLayout padding="10" margin="4 10" backgroundColor="#555" borderRadius="10">
                     <Label [text]="log" textWrap="true" color="white"></Label>
                 </StackLayout>
             </ng-template>

@@ -14,13 +14,10 @@ export interface StompFailMessage {
 
 export declare class StompConfig {
     brokerURL: string;
-    autoReconnect?: boolean;
-    reconnectDelay?: number;
     heartbeatIncoming?: number;
     heartbeatOutgoing?: number;
     connectHeaders?: StompHeaders;
     onConnect?: () => void;
-    onReconnect?: () => void;
     onDisconnect?: () => void;
     onStompError?: (error: any) => void;
     onFailedServerHeartBeat?: (error: any) => void;

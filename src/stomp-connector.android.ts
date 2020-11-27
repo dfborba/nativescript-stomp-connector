@@ -38,10 +38,10 @@ export class StompConnector {
 
 		this.mStompClient
 			.withClientHeartbeat(
-				!!this._config.heartbeatIncoming ? this._config.heartbeatIncoming : 1000
+				!!this._config.heartbeatIncoming ? this._config.heartbeatIncoming : 2000
 			)
 			.withServerHeartbeat(
-				!!this._config.heartbeatOutgoing ? this._config.heartbeatOutgoing : 1000
+				!!this._config.heartbeatOutgoing ? this._config.heartbeatOutgoing : 2000
 			);
 
 		this._resetSubscriptions();
@@ -68,10 +68,9 @@ export class StompConnector {
 									break;
 								case ua.naiksoftware.stomp.dto.LifecycleEvent.Type.CLOSED:
 									that.get()._config.onDisconnect();
-									this._startAutoReConnect();
 									break;
 								case ua.naiksoftware.stomp.dto.LifecycleEvent.Type.FAILED_SERVER_HEARTBEAT:
-									this._gotHeartBeatFail();
+									that.get()._gotHeartBeatFail();
 									that.get()._config.onFailedServerHeartBeat(lifecycleEvent.getMessage());
 									break;
 							}
@@ -119,44 +118,12 @@ export class StompConnector {
 		this._listOfTopicsDisposable = new Array<{ destination: string, disposable: io.reactivex.disposables.Disposable}>();
 	}
 
-	private _startAutoReConnect() {
-		if(this._config.autoReconnect && !!this.mStompClient) {
-			this._callDebug(`[STOMP_CONNECTOR_DEBUG] attempt to reconnect to ws`);
-			this._callDebug(`[STOMP_CONNECTOR_DEBUG] clean disposable and callbacks.. I'm on the dark NOW! `);
-
-			this._resetSubscriptions();
-
-			this._cleanTopicCallbacksAndUnsubscribe(() => {
-				this._callDebug(`[STOMP_CONNECTOR_DEBUG] Got on callback `);
-				var autoReconnectInterval = setInterval(() => {
-					this._callDebug(`[STOMP_CONNECTOR_DEBUG] is Connected? ${this.mStompClient.isConnected()}`);
-					if (!this.mStompClient.isConnected()) {
-						this.mStompClient.reconnect();
-					} else {
-						this._callDebug(`[STOMP_CONNECTOR_DEBUG] Reconnect to lifecycle!`);
-						this._connectToStompClientLifecycle();
-	
-						if (!!this._config.onReconnect && (typeof this._config.onReconnect === 'function')) {
-							this._callDebug(`[STOMP_CONNECTOR_DEBUG] call reconnect callback function!`);
-							this._config.onReconnect();
-						}
-	
-						clearInterval(autoReconnectInterval);
-					}
-				}, !!this._config.reconnectDelay ? this._config.reconnectDelay : 2000);
-			});
-
-		}
-	}
-
 	private _gotHeartBeatFail() {
 		this._callDebug(`[STOMP_CONNECTOR_DEBUG] HEART beat failed!`);
 	}
 
 	public disconnect() {
         if (!!this.mStompClient) {
-			this._config.autoReconnect = false;
-
             this.mStompClient.disconnect();
             this.mStompClient = null;
         }
@@ -206,9 +173,6 @@ export class StompConnector {
 
 				this._listOfTopicsDisposable.push({ destination: destination, disposable: newTopiDisposable });
 				this._topicCompositeDisposable.add(newTopiDisposable);
-			} else {
-				this._callDebug(`[STOMP_CONNECTOR_DEBUG] already subscribed so calling unsubscribe with subscribe on callback | ${destination}`);
-				this.unsubscribe(destination, () => { this.topic(destination, callback, fail) });
 			}
 		}
 	}
@@ -273,10 +237,16 @@ export class StompConnector {
 					.subscribe(new io.reactivex.functions.Action({
 						run: function() {
 							that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] message sent`);
+							if(!!callback && typeof callback === 'function')  {
+								callback();
+							}
 						}
 					}), new io.reactivex.functions.Consumer({
 						accept: function(throwable: any /*Throwable*/) {
 							that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] message error: ${JSON.stringify(throwable)}`);
+							if(!!fail && typeof fail === 'function')  {
+								fail(throwable);
+							}
 						}
 					})
 				)
@@ -344,41 +314,5 @@ export class StompConnector {
 				this._callbacks[type].splice(index, 1);
 			}
 		}
-	}
-
-	private _cleanTopicCallbacksAndUnsubscribe(callback: () => void): void {
-		this._callDebug(`[STOMP_CONNECTOR_DEBUG] removing 'topics' all destinations and unsubscribe from callback listener`);
-		var topics = this._callbacks['topics'];
-		if (!!topics && topics.length > 0) {
-			this._callDebug(`[STOMP_CONNECTOR_DEBUG] quantity of topics: ${topics.length}`);
-			topics.forEach((topic, index) => {
-				this._callDebug(`[STOMP_CONNECTOR_DEBUG] removed from position ${index}`);
-				var toUnsubscribe = this._callbacks['topics'].splice(index, 1)[0];
-
-				const topicDisposableIndex = this._listOfTopicsDisposable.findIndex((topicDisposable) => topicDisposable.destination === topic.destination);
-				if (topicDisposableIndex >= 0) {
-					this._callDebug(`[STOMP_CONNECTOR_DEBUG] removed disposable `);
-					const topicDisposableToDispose = this._listOfTopicsDisposable.splice(topicDisposableIndex, 1)[0];
-					this._topicCompositeDisposable.remove(topicDisposableToDispose.disposable);
-					topicDisposableToDispose.disposable.dispose();
-				}
-
-				this._callDebug(`[STOMP_CONNECTOR_DEBUG] unsubscribe from destination ${toUnsubscribe.destination}`);
-				this.mStompClient.unsubscribePath(toUnsubscribe.destination).subscribe(new io.reactivex.functions.Action({
-					run: function() {
-						this._callDebug(`[STOMP_CONNECTOR_DEBUG] UNSUBSCRIBE with success from destination ${toUnsubscribe.destination}`);
-					}
-				}), new io.reactivex.functions.Consumer({
-					accept: function (throwable: any /*Throwable*/) {
-						this._callDebug(`[STOMP_CONNECTOR_DEBUG] NOT UNSUBSCRIBE from destination ${toUnsubscribe.destination}`);
-					},
-				}));
-			});
-		}
-
-		this._callDebug(`[STOMP_CONNECTOR_DEBUG] what remains from callback array ${JSON.stringify(this._callbacks)}`);
-		this._callDebug(`[STOMP_CONNECTOR_DEBUG] what remains from topic list disposable? ${JSON.stringify(this._listOfTopicsDisposable)}`);
-
-		callback();
 	}
 }

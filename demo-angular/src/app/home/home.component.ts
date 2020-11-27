@@ -13,7 +13,7 @@ export class HomeComponent implements OnInit {
     public logs: ObservableArray<string>;
 
     public messageContent: string = '';
-    public token: string = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkYm9yYmEiLCJleHAiOjE2MDU2ODk3OTAsImlhdCI6MTYwNTY3MTc5MH0.HAZDrqGkvU5y4g3bLn4WLYILHA2SSGbh4VhQbvkyt6PvneR3E6IHnTjYHBkJAzWSBDwvIWeleOPSB5Y6bngXnA";
+    public token: string = "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkYm9yYmEiLCJleHAiOjE2MDY0ODA0NjksImlhdCI6MTYwNjQ2MjQ2OX0.TogyUxH4P_OkshEt4sZWqfqEqI2QSxSa4j2taBFWtsFmiOdoiRcTSKW58-CpCtwHWnnm0NXFkTLDZuFu0YQ_lw";
 
     public isConnected = false;
 
@@ -30,22 +30,12 @@ export class HomeComponent implements OnInit {
         this.connectionStatus = 'Trying to connect';
         this.stompClient.connect({
             brokerURL: this.url,
-            autoReconnect: true,
-            reconnectDelay: 1000,
             connectHeaders: {
                 "X-Authorization": this.token,
             },
             onConnect: () => {
                 this.connectionStatus = 'CONNECTED';
-                this.logs.push('CONNECTED');
-                this.isConnected = true;
-                if (!this._changeDetectorRef['destroyed']) {
-					this._changeDetectorRef.detectChanges();
-				}
-            },
-            onReconnect: () => {
-                this.connectionStatus = 'CONNECTED';
-                this.logs.push('CONNECTED');
+                this.logs.unshift('CONNECTED');
                 this.isConnected = true;
                 if (!this._changeDetectorRef['destroyed']) {
 					this._changeDetectorRef.detectChanges();
@@ -53,8 +43,8 @@ export class HomeComponent implements OnInit {
             },
             onStompError: (error) => {
                 this.connectionStatus = 'ERROR';
-                this.logs.push('ERROR');
-                this.logs.push(error);
+                this.logs.unshift('ERROR');
+                this.logs.unshift(error);
             },
             onDisconnect: () => {
                 this.connectionStatus = 'DISCONNECT';
@@ -62,13 +52,13 @@ export class HomeComponent implements OnInit {
                 if (!this._changeDetectorRef['destroyed']) {
 					this._changeDetectorRef.detectChanges();
 				}
-                this.logs.push('DISCONNECT');
+                this.logs.unshift('DISCONNECT');
             },
             onFailedServerHeartBeat: (error: string) => {
-                this.logs.push(`${error}`);
+                this.logs.unshift(`${error}`);
             },
             debug: (msg: string) => {
-                this.logs.push(`${msg}`);
+                this.logs.unshift(`${msg}`);
             }
         } as StompConfig);
     }
@@ -83,7 +73,7 @@ export class HomeComponent implements OnInit {
             (response: StompMessage) => {
                 console.log("------------------ SUBSCRIPTION RESPONSE -------------------");
                 console.dir(response);
-                this.logs.push(JSON.stringify(response.payload));
+                this.logs.unshift(JSON.stringify(response.payload));
                 this._changeDetectorRef.detectChanges();
             });
     }
@@ -98,7 +88,7 @@ export class HomeComponent implements OnInit {
         this.stompClient.send(
             { message: this.messageContent, destination: '/app/greetings'},
             () => { 
-                this.logs.push('Message just sent!');
+                this.logs.unshift('Message just sent!');
             });
     }
 
@@ -110,11 +100,11 @@ export class HomeComponent implements OnInit {
                 withHeaders: { "content-type": "application/json" }
             },
             () => { 
-                this.logs.push('Message just sent!');
+                this.logs.unshift('Message just sent!');
             });
     }
 
     connected() {
-        this.logs.push('Is connected? ' + (this.stompClient.isConnected() ? 'YES' : 'NO'));
+        this.logs.unshift('Is connected? ' + (this.stompClient.isConnected() ? 'YES' : 'NO'));
     }
 }
