@@ -31,7 +31,7 @@ export class HomeComponent implements OnInit {
         this.stompClient.connect({
             brokerURL: this.url,
             autoReconnect: true,
-            reconnectDelay: 6000,
+            reconnectDelay: 1000,
             connectHeaders: {
                 "X-Authorization": this.token,
             },
@@ -64,8 +64,11 @@ export class HomeComponent implements OnInit {
 				}
                 this.logs.push('DISCONNECT');
             },
+            onFailedServerHeartBeat: (error: string) => {
+                this.logs.push(`${error}`);
+            },
             debug: (msg: string) => {
-                this.logs.push(`#DEBUG ${msg}`);
+                this.logs.push(`${msg}`);
             }
         } as StompConfig);
     }
