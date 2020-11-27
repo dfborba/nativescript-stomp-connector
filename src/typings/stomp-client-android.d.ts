@@ -22,7 +22,7 @@ declare module io {
 				export class AndroidSchedulers extends java.lang.Object {
 					public static class: java.lang.Class<io.reactivex.android.schedulers.AndroidSchedulers>;
 					public constructor();
-					public static mainThread(): io.reactivex.schedulers.Schedulers;
+					public static mainThread(): io.reactivex.Scheduler;
 				}
 			}
 		}
@@ -31,7 +31,8 @@ declare module io {
 			export class Schedulers extends java.lang.Object {
 				public static class: java.lang.Class<io.reactivex.schedulers.Schedulers>;
 				public constructor();
-				public static io(): io.reactivex.schedulers.Schedulers;
+				public static io(): io.reactivex.Scheduler;
+				public static newThread(): io.reactivex.Scheduler;
 			}
 		}
 
@@ -49,6 +50,10 @@ declare module io {
 			}
 		}
 
+		export class Scheduler extends java.lang.Object {
+			public static class: java.lang.Class<io.reactivex.Scheduler>;
+		}
+
 		export class Flowable<T> extends java.lang.Object {
 			public static class: java.lang.Class<io.reactivex.Flowable<any>>;
 			public subscribe(): io.reactivex.disposables.Disposable;
@@ -58,8 +63,29 @@ declare module io {
 				onNext: io.reactivex.functions.Consumer<T>,
 				onError: io.reactivex.functions.Consumer<T>,
 				onComplete: io.reactivex.functions.Action): io.reactivex.disposables.Disposable;
-			public subscribeOn(scheduler: io.reactivex.schedulers.Schedulers): io.reactivex.Flowable<T>;
-			public observeOn(scheduler: io.reactivex.schedulers.Schedulers): io.reactivex.Flowable<T>;
+			public subscribeOn(scheduler: io.reactivex.Scheduler): io.reactivex.Flowable<T>;
+			public unsubscribeOn(scheduler: io.reactivex.Scheduler): io.reactivex.Flowable<T>;
+			public observeOn(scheduler: io.reactivex.Scheduler): io.reactivex.Flowable<T>;
+		}
+
+		export class CompletableObserver extends java.lang.Object {
+			public static class: java.lang.Class<io.reactivex.CompletableObserver>;
+			public constructor(implementation: { onComplete(): void, onError(e: Throwable): void, onSubscribe(d: io.reactivex.disposables.Disposable): void });
+			public onComplete(): void;
+			public onError(e: Throwable): void;
+			public onSubscribe(d: io.reactivex.disposables.Disposable): void;
+		}
+		
+		export class CompletableSource extends java.lang.Object {
+			public static class: java.lang.Class<io.reactivex.CompletableSource>;
+			public constructor(implementation: { subscribe(co: io.reactivex.CompletableObserver): void });
+			public subscribe(co: io.reactivex.CompletableObserver): void;
+		}
+
+		export class CompletableTransformer extends java.lang.Object {
+			public static class: java.lang.Class<io.reactivex.CompletableTransformer>;
+			public constructor(implementation: { apply(upstream: io.reactivex.Completable): io.reactivex.CompletableSource });
+			public apply(upstream: io.reactivex.Completable): io.reactivex.CompletableSource;
 		}
 
 		export class Completable extends java.lang.Object {
@@ -70,6 +96,10 @@ declare module io {
 				onComplete: io.reactivex.functions.Action,
 				onError: io.reactivex.functions.Consumer<any>): io.reactivex.disposables.Disposable;
 			public onErrorComplete(): io.reactivex.Completable;
+			public compose(transform: io.reactivex.CompletableTransformer): io.reactivex.Completable;
+			public subscribeOn(scheduler: io.reactivex.Scheduler): io.reactivex.Completable;
+			public unsubscribeOn(scheduler: io.reactivex.Scheduler): io.reactivex.Completable;
+			public observeOn(scheduler: io.reactivex.Scheduler): io.reactivex.Completable;
 		}
 	}
 }
