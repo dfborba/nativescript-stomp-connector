@@ -17,7 +17,7 @@ class MyStompClientLibDelegateImpl extends NSObject implements StompClientLibDel
 	stompClientWithClientDidReceiveMessageWithJSONBodyAkaStringBodyWithHeaderWithDestination(client: StompClientLib, jsonBody: string, stringBody: string, headers: any, destination: string): void {
 		if (!!this._owner) {
 			this._owner.get()._callDebug(`stompClientDidReceiveMessageWithJSONBodyWithJSONBodyAkaStringBodyWithHeaderWithDestination: ${jsonBody} | ${stringBody} | ${headers} | ${destination}`);
-			this._owner.get()._notify('topics', destination, stringBody);
+			this._owner.get().notify('topics', destination, stringBody);
 		}
 	}
 
@@ -32,6 +32,9 @@ class MyStompClientLibDelegateImpl extends NSObject implements StompClientLibDel
 		if (!!this._owner) {
 			this._owner.get()._callDebug(`stompClientDidDisconnectWithClient`);
 			this._owner.get()._config.onDisconnect();
+			if(this._owner.get()._config.autoReconnect) {
+				this._owner.get().startAutoReConnect();
+			}
 		}
 	}
 	
@@ -103,6 +106,23 @@ export class StompConnector {
 		this._config.autoReconnect = false;
 		this.mStompClient.disconnect();
 		this.mStompClient = null;
+	}
+
+	public startAutoReConnect() {
+		if(this._config.autoReconnect && !!this.mStompClient) {
+			this._callDebug(`>>>>> attempt to reconnect to ws`);
+			let header: NSDictionary<any, any>;
+			if (!!this._config.connectHeaders) {
+				header = this._buildHeader(this._config.connectHeaders);
+			}
+
+			this.mStompClient.reconnectWithRequestDelegateConnectionHeadersTimeExponentialBackoff(
+				NSURLRequest.requestWithURL(NSURL.URLWithString(this._config.brokerURL)),
+				this._iosDelegate,
+				header,
+				this._config.reconnectDelay,
+				true);
+		}
 	}
 
 	public isConnected(): boolean {
@@ -178,7 +198,7 @@ export class StompConnector {
 		}
 	}
 
-    private _notify(type: string, destination: string, response?: any, error?: any): void {
+    public notify(type: string, destination: string, response?: any, error?: any): void {
 		var _cb = this._callbacks[type];
 		if (_cb.length > 0) {
 			const callBackEvent = _cb.find((cbByType) => cbByType.destination === destination);

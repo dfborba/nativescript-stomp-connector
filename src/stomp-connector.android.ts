@@ -1,11 +1,11 @@
-import { StompConfig, StompFailMessage, StompHeaders, StompMessage, StompSendMessage } from './stomp-connector.common';
+import { StompConfig, StompFailMessage, StompMessage, StompSendMessage } from './stomp-connector.common';
 
 type LifecycleEvent = ua.naiksoftware.stomp.dto.LifecycleEvent;
 type StompClient = ua.naiksoftware.stomp.StompClient;
 
 export class StompConnector {
 	private _callbacks: {
-		topics: [{ destination: string, callback: (payload: StompMessage) => void, fail?: (error: StompFailMessage) => void }?], 
+		topics: [{ destination: string, callback: (payload: StompMessage) => void, fail?: (error: StompFailMessage) => void }?],
         messages: [{ destination: string, callback: () => void, fail?: (error: StompFailMessage) => void  }?]};
 		
 	private _mStompClient: ua.naiksoftware.stomp.StompClient;
@@ -14,6 +14,8 @@ export class StompConnector {
 	private _messageCompositeDisposable: io.reactivex.disposables.CompositeDisposable;
 	
 	private _listOfTopicsDisposable: Array<{ destination: string, disposable: io.reactivex.disposables.Disposable}>;
+	private _subscribeCallback: io.reactivex.functions.Consumer<any>;
+	private _subscribeCallbackError: io.reactivex.functions.Consumer<any>;
 
 	private _config: StompConfig;
 
@@ -33,7 +35,27 @@ export class StompConnector {
 			ua.naiksoftware.stomp.Stomp.ConnectionProvider.OKHTTP,
 			config.brokerURL
 		);
+		
+		const that = new WeakRef(this);
+		
+		this._subscribeCallback = new io.reactivex.functions.Consumer({
+			accept: function (topicMessage: ua.naiksoftware.stomp.dto.StompMessage) {
+				that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] topic message received from destination: ${['destination']}`);
+				that.get()._notify('topics', '/topic/broadcast', JSON.parse(topicMessage.getPayload()));
+			},
+		});
 
+		this._subscribeCallbackError = new io.reactivex.functions.Consumer({
+			accept: function (throwable: any /*Throwable*/) {
+				that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] topic message error from destination: ${'/topic/broadcast'} | error: ${JSON.stringify(throwable)}`);
+				that.get()._notify('topics', '/topic/broadcast', null, JSON.stringify(throwable));
+			},
+		});
+
+		this._connect(config);
+	}
+
+	private _connect(config: StompConfig) {
 		let headers = new java.util.ArrayList<ua.naiksoftware.stomp.dto.StompHeader>();
 		if (!!config.connectHeaders) {
 			const keys = Object.keys(config.connectHeaders);
@@ -54,7 +76,7 @@ export class StompConnector {
 
 		const successCB = new io.reactivex.functions.Consumer<LifecycleEvent>({
 			accept: (lifecycleEvent: LifecycleEvent) => {
-				that.get()._callDebug(`>>>>> LifecycleEvent: ${lifecycleEvent.getType()}`);
+				that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] LifecycleEvent: ${lifecycleEvent.getType()}`);
 				switch (lifecycleEvent.getType()) {
 					case ua.naiksoftware.stomp.dto.LifecycleEvent.Type.OPENED:
 						config.onConnect();
@@ -66,9 +88,9 @@ export class StompConnector {
 					case ua.naiksoftware.stomp.dto.LifecycleEvent.Type.CLOSED:
 						config.onDisconnect();
 						this._startAutoReConnect();
-						this._resetSubscriptions();
 						break;
 					case ua.naiksoftware.stomp.dto.LifecycleEvent.Type.FAILED_SERVER_HEARTBEAT:
+						this._gotHeartBeatFail();
 						config.onFailedServerHeartBeat(lifecycleEvent.getMessage());
 						break;
 				}
@@ -77,7 +99,7 @@ export class StompConnector {
 
 		const errorCB = new io.reactivex.functions.Consumer<any>({
 			accept: function (throwable: any /*Throwable*/) {
-				that.get()._callDebug(`>>>>> connect error: ${JSON.stringify(throwable.getMessage())}`);
+				that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] connect error: ${JSON.stringify(throwable.getMessage())}`);
 				config.onStompError(JSON.stringify(throwable));
 			},
 		});
@@ -121,18 +143,23 @@ export class StompConnector {
 
 	private _startAutoReConnect() {
 		if(this._config.autoReconnect && !!this.mStompClient) {
-			this._callDebug(`>>>>> attempt to reconnect to ws`);
+			this._callDebug(`[STOMP_CONNECTOR_DEBUG] attempt to reconnect to ws`);
 			var autoReconnectInterval = setInterval(() => {
 				if (!this.mStompClient.isConnected()) {
-					this._callDebug(`>>>>> calling lib reconnect method`);
-					this.mStompClient.reconnect();
+					this._callDebug(`[STOMP_CONNECTOR_DEBUG] and now? Did we connect?`);
 				} else {
-					this._callDebug(`>>>>> We are connected now, clearing interval | !YOU should resubscribe to your topics or queues `);
-					this._config.onReconnect();
+					if (!!this._config.onReconnect && (typeof this._config.onReconnect === 'function')) {
+						this._config.onReconnect();
+					}
+
 					clearInterval(autoReconnectInterval);
 				}
 			}, !!this._config.reconnectDelay ? this._config.reconnectDelay : 5000);
 		}
+	}
+
+	private _gotHeartBeatFail() {
+		this._callDebug(`[STOMP_CONNECTOR_DEBUG] HEART beat failed!`);
 	}
 
 	public disconnect() {
@@ -164,71 +191,60 @@ export class StompConnector {
 					callback: callback, 
 					fail: !!fail ? fail : (error) => { console.error(error) } });
 		
-				const that = new WeakRef(this);
-		
-				const _subscribeCallback = new io.reactivex.functions.Consumer({
-					accept: function (topicMessage: ua.naiksoftware.stomp.dto.StompMessage) {
-						that.get()._callDebug(`>>>>> topic message received from destination: ${destination}`);
-						that.get()._notify('topics', destination, JSON.parse(topicMessage.getPayload()));
-					},
-				});
-		
-				const _subscribeCallbackError = new io.reactivex.functions.Consumer({
-					accept: function (throwable: any /*Throwable*/) {
-						that.get()._callDebug(`>>>>> topic message error from destination: ${destination} | error: ${JSON.stringify(throwable)}`);
-						that.get()._notify('topics', destination, null, JSON.stringify(throwable));
-					},
-				});
-		
-				that.get()._callDebug(`>>>>> attempt to subscribe to topic: ${destination}`);
+				this._callDebug(`[STOMP_CONNECTOR_DEBUG] attempt to subscribe to topic: ${destination}`);
 				const newTopiDisposable = this.mStompClient
 						.topic(destination)
 						.subscribeOn(io.reactivex.schedulers.Schedulers.io())
 						.observeOn(io.reactivex.android.schedulers.AndroidSchedulers.mainThread())
-						.subscribe(_subscribeCallback, _subscribeCallbackError);
+						.subscribe(this._subscribeCallback, this._subscribeCallbackError);
 	
 				this._listOfTopicsDisposable.push({ destination: destination, disposable: newTopiDisposable });
 				this._topicCompositeDisposable.add(newTopiDisposable);
-			} else if (!!fail) {
-				fail({ destination: destination, error: "Already subscribed to topic for destination" });
+			} else {
+				this.unsubscribe(destination, () => { this.topic(destination, callback, fail) });
 			}
 		}
 	}
 
 	private _isAlreadySubscribedToTopic(destination: string) {
 		const foundIndex = this._callbacks['topics'].findIndex((topic) => topic.destination === destination);
-		this._callDebug(`>>>>> is topic already subscribed for ${destination}? ${foundIndex !== -1 ? 'YES' : 'NO'}`);
+		this._callDebug(`[STOMP_CONNECTOR_DEBUG] is topic already subscribed for ${destination}? ${foundIndex !== -1 ? 'YES' : 'NO'}`);
 		return foundIndex !== -1;
 	}
 
 	public unsubscribe(destination: string, callback?: () => void) {
+		this._removeTopicFromDisposable(destination);
+
 		const that = new WeakRef(this);
-		if (!!this.mStompClient 
-			&& this.mStompClient.isConnected()
-				&& !!this.mStompClient.getTopicId(destination)) {
-			
-			this._removeTopicFromDisposable(destination);
+		if (!!this.mStompClient && this.mStompClient.isConnected()) {
 
 			this.mStompClient.unsubscribePath(destination)
 				.subscribe(new io.reactivex.functions.Action({
 					run: function() {
-						that.get()._removeFromCallback('topics', destination);
-						that.get()._callDebug(`>>>>> unsubscribePath from destination ${destination}`);
+						that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] unsubscribePath from destination ${destination}`);
+						if (!!callback && typeof callback === 'function') {
+							callback();
+						}
 					}
 				}), new io.reactivex.functions.Consumer({
 					accept: function (throwable: any /*Throwable*/) {
-						that.get()._callDebug(`>>>>> unsubscribePath message error from destination: ${destination} | error: ${JSON.stringify(throwable)}`);
+						that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] unsubscribePath message error from destination: ${destination} | error: ${JSON.stringify(throwable)}`);
 					},
 				}));
 		} else {
-			that.get()._callDebug(`>>>>> unsubscribePath not possible because you never subscribe to ${destination}`);
+			that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] unsubscribePath not possible because you never subscribe to ${destination}`);
+			if (!!callback && typeof callback === 'function') {
+				callback();
+			}
 		}
 	}
 
 	private _removeTopicFromDisposable(destination: string) {
+		this._removeFromCallback('topics', destination);
+
 		const index = this._listOfTopicsDisposable.findIndex((topic) => topic.destination === destination);
 		if (index >= 0) {
-			this._callDebug(`>>>>> removed disposable `);
+			this._callDebug(`[STOMP_CONNECTOR_DEBUG] removed disposable `);
 			this._topicCompositeDisposable.remove(this._listOfTopicsDisposable[index].disposable);
 			this._listOfTopicsDisposable.splice(index, 1);
 		}
@@ -236,7 +252,7 @@ export class StompConnector {
 
 	public send(request: StompSendMessage, callback?: () => void, fail?: (payload: StompFailMessage) => {}) {
         if (!!this.mStompClient) {
-			this._callDebug(`>>>>> attempt to send message to destination: ${request.destination}`);
+			this._callDebug(`[STOMP_CONNECTOR_DEBUG] attempt to send message to destination: ${request.destination}`);
 
 			if (!!callback) {
 				this._callbacks['messages'].push({ 
@@ -249,14 +265,14 @@ export class StompConnector {
 
 			const _sendMessageCallback = new io.reactivex.functions.Action({
 				run: function() {
-					that.get()._callDebug(`>>>>> message sent`);
+					that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] message sent`);
 					that.get()._notify('messages', request.destination);
 				}
 			});
 	
 			const _sendMessageFailCallback = new io.reactivex.functions.Consumer({
 				accept: function(throwable: any /*Throwable*/) {
-					that.get()._callDebug(`>>>>> message error: ${JSON.stringify(throwable)}`);
+					that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] message error: ${JSON.stringify(throwable)}`);
 					that.get()._notify('messages', request.destination, null, throwable.getMessage());
 				}
 			});
@@ -318,12 +334,12 @@ export class StompConnector {
 	}
 
 	private _removeFromCallback(type: string, destination: string): void {
-		this._callDebug(`>>>>> removing ${type} with destination ${destination} from callback listener`);
+		this._callDebug(`[STOMP_CONNECTOR_DEBUG] removing ${type} with destination ${destination} from callback listener`);
 		var topics = this._callbacks[type];
 		if (topics.length > 0) {
 			const index = topics.findIndex((topic) => topic.destination === destination);
 			if (index >= 0) {
-				this._callDebug(`>>>>> removed from position ${index}`);
+				this._callDebug(`[STOMP_CONNECTOR_DEBUG] removed from position ${index}`);
 				this._callbacks[type].splice(index, 1);
 			}
 		}

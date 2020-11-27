@@ -7,13 +7,13 @@ import { ObservableArray } from "@nativescript/core";
     templateUrl: "./home.component.html"
 })
 export class HomeComponent implements OnInit {
-    private url = "ws://10.0.0.2:8080/greetings/websocket";
+    private url = "ws://10.0.0.2:4242/greetings/websocket";
     private stompClient: StompConnector;
     public connectionStatus: string = 'Not connected';
     public logs: ObservableArray<string>;
 
     public messageContent: string = '';
-    public token: string = "token";
+    public token: string = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkYm9yYmEiLCJleHAiOjE2MDU2ODk3OTAsImlhdCI6MTYwNTY3MTc5MH0.HAZDrqGkvU5y4g3bLn4WLYILHA2SSGbh4VhQbvkyt6PvneR3E6IHnTjYHBkJAzWSBDwvIWeleOPSB5Y6bngXnA";
 
     public isConnected = false;
 
