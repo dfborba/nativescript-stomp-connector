@@ -23,6 +23,7 @@ class MyStompClientLibDelegateImpl extends NSObject implements StompClientLibDel
 
 	stompClientDidConnectWithClient(client: StompClientLib): void {
 		if (!!this._owner) {
+			this._owner.get().connected = true;
 			this._owner.get()._callDebug(`stompClientDidConnectWithClient`);
 			this._owner.get()._config.onConnect();	
 		}
@@ -30,6 +31,7 @@ class MyStompClientLibDelegateImpl extends NSObject implements StompClientLibDel
 
 	stompClientDidDisconnectWithClient(client: StompClientLib): void {
 		if (!!this._owner) {
+			this._owner.get().connected = false;
 			this._owner.get()._callDebug(`stompClientDidDisconnectWithClient`);
 			this._owner.get()._config.onDisconnect();
 			if(this._owner.get()._config.autoReconnect) {
@@ -46,8 +48,13 @@ class MyStompClientLibDelegateImpl extends NSObject implements StompClientLibDel
 	
 	serverDidSendErrorWithClientWithErrorMessageDetailedErrorMessage(client: StompClientLib, description: string, message: string): void {
 		if (!!this._owner) {
-			this._owner.get()._callDebug(`serverDidSendErrorWithClientWithErrorMessageDetailedErrorMessage: ${description} | ${message}`);
+			this._owner.get()._callDebug(`serverDidSendErrorWithClientWithErrorMessageDetailedErrorMessage: ${description} | ${message} `);
 			this._owner.get()._config.onStompError.call(description + message);
+			this._owner.get().connected = false;
+
+			if(this._owner.get()._config.autoReconnect) {
+				this._owner.get().startAutoReConnect();
+			}
 		}
 	}
 
@@ -67,6 +74,7 @@ export class StompConnector {
 	private _iosDelegate: MyStompClientLibDelegateImpl;
 	
 	private _config: StompConfig;
+	private _isConnected = false;
 
 	constructor() {
 		this._callbacks = { topics: [], messages: [] };
@@ -81,15 +89,29 @@ export class StompConnector {
 		this._config = config;
 		this.mStompClient = StompClientLib.new();
 
+		this._callConnectWithHeader();
+	}
+
+	private _callConnectWithHeader() {
 		let header: NSDictionary<any, any>;
-		if (!!config.connectHeaders) {
-			header = this._buildHeader(config.connectHeaders);
+		if (!!this._config.connectHeaders) {
+			header = this._buildHeader(this._config.connectHeaders);
 		}
 
-		this.mStompClient.openSocketWithURLRequestWithRequestDelegateConnectionHeaders(
-			NSURLRequest.requestWithURL(NSURL.URLWithString(config.brokerURL)),
+		this.mStompClient.reconnectWithRequestDelegateConnectionHeadersTimeExponentialBackoff(
+			NSURLRequest.requestWithURL(NSURL.URLWithString(this._config.brokerURL)),
 			this._iosDelegate,
-			header);
+			header,
+			this._config.reconnectDelay,
+			true);
+	}
+
+	set connected(newStatus: boolean) {
+		this._isConnected = newStatus;
+	}
+
+	public isConnected(): boolean {
+		return this._isConnected;
 	}
 
 	private _buildHeader(connectHeaders: StompHeaders) {
@@ -103,6 +125,7 @@ export class StompConnector {
 	}
 
     public disconnect(): void {
+		this._callbacks = { topics: [], messages: [] };
 		this._config.autoReconnect = false;
 		this.mStompClient.disconnect();
 		this.mStompClient = null;
@@ -110,23 +133,21 @@ export class StompConnector {
 
 	public startAutoReConnect() {
 		if(this._config.autoReconnect && !!this.mStompClient) {
-			this._callDebug(`>>>>> attempt to reconnect to ws`);
-			let header: NSDictionary<any, any>;
-			if (!!this._config.connectHeaders) {
-				header = this._buildHeader(this._config.connectHeaders);
-			}
+			this._callDebug(`[STOMP_CONNECTOR_DEBUG] attempt to reconnect to ws`);
+			var autoReconnectInterval = setInterval(() => {
+				if (!this.isConnected()) {
+					this._callDebug(`[STOMP_CONNECTOR_DEBUG] and now? Did we connect?`);
+					this._callConnectWithHeader();
+				} else {
+					if (!!this._config.onReconnect && (typeof this._config.onReconnect === 'function')) {
+						this._config.onReconnect();
+					}
 
-			this.mStompClient.reconnectWithRequestDelegateConnectionHeadersTimeExponentialBackoff(
-				NSURLRequest.requestWithURL(NSURL.URLWithString(this._config.brokerURL)),
-				this._iosDelegate,
-				header,
-				this._config.reconnectDelay,
-				true);
+					clearInterval(autoReconnectInterval);
+				}
+			}, !!this._config.reconnectDelay ? this._config.reconnectDelay : 5000);
+			
 		}
-	}
-
-	public isConnected(): boolean {
-		return this.mStompClient.isConnected();
 	}
 
     public topic(
@@ -134,54 +155,53 @@ export class StompConnector {
 		callback: (payload: StompMessage) => {},
 		fail?: (payload: StompFailMessage) => {}
 	) {
-		this._callDebug(`>>>>> attempt to subscribe to topic: ${destination}`);
+		this._callDebug(`[STOMP_CONNECTOR_DEBUG] attempt to subscribe to topic: ${destination}`);
 
-		if (!this._isAlreadySubscribedToTopic(destination)) {
-			this._callbacks['topics'].push({ 
-				destination: destination, 
-				callback: callback, 
-				fail: !!fail ? fail : (error) => { console.error(error) } });
-	
-			this.mStompClient.subscribeWithDestination(destination);
-		} else if (!!fail) {
-			fail({ destination: destination, error: "Already subscribed to topic for destination" });
+		if (!!this.mStompClient) {
+			if (!this._isAlreadySubscribedToTopic(destination)) {
+				this._callbacks['topics'].push({ 
+					destination: destination, 
+					callback: callback, 
+					fail: !!fail ? fail : (error) => { console.error(error) } });
+		
+				this.mStompClient.subscribeWithDestination(destination);
+			} else if (!!fail) {
+				fail({ destination: destination, error: "Already subscribed to topic for destination" });
+			}
+		} else if (!!fail && typeof fail === 'function') {
+			fail({ destination: destination, error: "Client is NULL" });
 		}
 	}
 
 	private _isAlreadySubscribedToTopic(destination: string) {
 		const foundIndex = this._callbacks['topics'].findIndex((topic) => topic.destination === destination);
-		this._callDebug(`>>>>> is topic already subscribed for ${destination}? ${foundIndex !== -1 ? 'YES' : 'NO'}`);
+		this._callDebug(`[STOMP_CONNECTOR_DEBUG] is topic already subscribed for ${destination}? ${foundIndex !== -1 ? 'YES' : 'NO'}`);
 		return foundIndex !== -1;
 	}
 
 	public unsubscribe(destination: string, callback?: () => void) {
 		const that = new WeakRef(this);
-		if (!!this.mStompClient 
-			&& this.mStompClient.isConnected()) {
+		if (!!this.mStompClient) {
 			this._removeFromCallback('topics', destination);
 			this.mStompClient.unsubscribeWithDestination(destination);
 		} else {
-			that.get()._callDebug(`>>>>> unsubscribePath not possible because you never subscribe to ${destination}`);
+			that.get()._callDebug(`[STOMP_CONNECTOR_DEBUG] unsubscribePath not possible because stomp client is null to destination: ${destination}`);
 		}
 	}
 
     public send(request: StompSendMessage, callback?: () => void, fail?: (payload: StompFailMessage) => {}) {
-		this._callDebug(`>>>>> attempt to send message to destination: ${request.destination}`);
-
-		if (!!callback) {
-			this._callbacks['topics'].push({ 
-				destination: request.destination, 
-				callback: callback, 
-				fail: !!fail ? fail : (error) => { console.error(error) } });
+		this._callDebug(`[STOMP_CONNECTOR_DEBUG] attempt to send message to destination: ${request.destination}`);
+		if (!!this.mStompClient) {
+			let header: NSDictionary<any, any>;
+			if (!!request.withHeaders) {
+				header = this._buildHeader(request.withHeaders);
+			}
+			
+			this.mStompClient.sendMessageWithMessageToDestinationWithHeadersWithReceipt(
+				request.message, request.destination, header, request.withReceipt);
+		} else if (!!fail && typeof fail === 'function') {
+			fail({ destination: request.destination, error: "Unable to send message because client is null" });
 		}
-
-		let header: NSDictionary<any, any>;
-		if (!!request.withHeaders) {
-			header = this._buildHeader(request.withHeaders);
-		}
-
-		this.mStompClient.sendMessageWithMessageToDestinationWithHeadersWithReceipt(
-			request.message, request.destination, header, request.withReceipt);
 	}
 	
 	set mStompClient(stompClient: StompClientLib) {
@@ -215,9 +235,9 @@ export class StompConnector {
 	}
 
 	private _removeFromCallback(type: string, destination: string): void {
-		var topics = this._callbacks[type];
-		if (topics.length > 0) {
-			const index = topics.findIndex((topic) => topic.destination === destination);
+		var events = this._callbacks[type];
+		if (events.length > 0) {
+			const index = events.findIndex((topic) => topic.destination === destination);
 			if (index >= 0) {
 				this._callbacks[type].splice(index, 1);
 			}

@@ -37,7 +37,7 @@ export class HomeComponent implements OnInit {
             },
             onConnect: () => {
                 this.connectionStatus = 'CONNECTED';
-                this.logs.push('CONNECTED');
+                this.logs.unshift('CONNECTED');
                 this.isConnected = true;
                 if (!this._changeDetectorRef['destroyed']) {
 					this._changeDetectorRef.detectChanges();
@@ -45,7 +45,7 @@ export class HomeComponent implements OnInit {
             },
             onReconnect: () => {
                 this.connectionStatus = 'CONNECTED';
-                this.logs.push('CONNECTED');
+                this.logs.unshift('CONNECTED');
                 this.isConnected = true;
                 if (!this._changeDetectorRef['destroyed']) {
 					this._changeDetectorRef.detectChanges();
@@ -53,8 +53,8 @@ export class HomeComponent implements OnInit {
             },
             onStompError: (error) => {
                 this.connectionStatus = 'ERROR';
-                this.logs.push('ERROR');
-                this.logs.push(error);
+                this.logs.unshift('ERROR');
+                this.logs.unshift(error);
             },
             onDisconnect: () => {
                 this.connectionStatus = 'DISCONNECT';
@@ -62,10 +62,10 @@ export class HomeComponent implements OnInit {
                 if (!this._changeDetectorRef['destroyed']) {
 					this._changeDetectorRef.detectChanges();
 				}
-                this.logs.push('DISCONNECT');
+                this.logs.unshift('DISCONNECT');
             },
             debug: (msg: string) => {
-                this.logs.push(`#DEBUG ${msg}`);
+                this.logs.unshift(`#DEBUG ${msg}`);
             }
         } as StompConfig);
     }
@@ -80,7 +80,7 @@ export class HomeComponent implements OnInit {
             (response: StompMessage) => {
                 console.log("------------------ SUBSCRIPTION RESPONSE -------------------");
                 console.dir(response);
-                this.logs.push(JSON.stringify(response.payload));
+                this.logs.unshift(JSON.stringify(response.payload));
                 this._changeDetectorRef.detectChanges();
             });
     }
@@ -95,7 +95,7 @@ export class HomeComponent implements OnInit {
         this.stompClient.send(
             { message: this.messageContent, destination: '/app/greetings'},
             () => { 
-                this.logs.push('Message just sent!');
+                this.logs.unshift('Message just sent!');
             });
     }
 
@@ -107,11 +107,11 @@ export class HomeComponent implements OnInit {
                 withHeaders: { "content-type": "application/json" }
             },
             () => { 
-                this.logs.push('Message just sent!');
+                this.logs.unshift('Message just sent!');
             });
     }
 
     connected() {
-        this.logs.push('Is connected? ' + (this.stompClient.isConnected() ? 'YES' : 'NO'));
+        this.logs.unshift('Is connected? ' + (this.stompClient.isConnected() ? 'YES' : 'NO'));
     }
 }
